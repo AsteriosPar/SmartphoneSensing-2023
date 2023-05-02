@@ -25,7 +25,7 @@
         android:layout_marginEnd="10dp">
 
         <ImageView
-            android:id="@+id/C1Block"
+            android:id="@+id/block_C1"
             android:layout_width="80dp"
             android:layout_height="250dp"
             android:background="#FFDD77"
@@ -53,7 +53,7 @@
         android:layout_marginEnd="10dp">
 
         <ImageView
-            android:id="@+id/C2Block"
+            android:id="@+id/block_C2"
             android:layout_width="80dp"
             android:layout_height="250dp"
             android:background="#88000000"
@@ -82,7 +82,7 @@
         android:layout_marginEnd="10dp">
 
         <ImageView
-            android:id="@+id/C3Block"
+            android:id="@+id/block_C3"
             android:layout_width="80dp"
             android:layout_height="250dp"
             android:background="#88000000"
@@ -110,7 +110,7 @@
         android:layout_marginEnd="10dp">
 
         <ImageView
-            android:id="@+id/C4Block"
+            android:id="@+id/block_C4"
             android:layout_width="80dp"
             android:layout_height="250dp"
             android:background="#88000000"
@@ -135,24 +135,24 @@
 </LinearLayout>
 
 <Button
-    android:id="@+id/start_button"
+    android:id="@+id/btn_start"
     android:layout_width="100dp"
     android:layout_height="wrap_content"
     android:layout_centerHorizontal="true"
     android:text="Start"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toStartOf="@id/textView"
+    app:layout_constraintEnd_toStartOf="@id/txt_activity"
     app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
 <TextView
-    android:id="@+id/textView"
+    android:id="@+id/txt_activity"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="Activity"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toEndOf="@+id/start_button"
+    app:layout_constraintStart_toEndOf="@+id/btn_start"
     app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
 <TextView
