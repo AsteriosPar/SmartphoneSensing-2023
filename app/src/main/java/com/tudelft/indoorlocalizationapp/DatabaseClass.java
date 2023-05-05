@@ -47,20 +47,6 @@ public class DatabaseClass extends SQLiteOpenHelper {
         }
         return nameExists;
     }
-    public boolean addAP(String ar, int signal_strength, String cell) {
-        if (!checkAPExists(ar)) {
-            SQLiteDatabase db = this.getWritableDatabase();
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(COL2, ar);
-            contentValues.put(cell, signal_strength);
-
-            long result = db.insert(TABLE_NAME, null, contentValues);
-            if (result == -1) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     public boolean addData(String ar, int signal_strength, String cell) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -76,6 +62,10 @@ public class DatabaseClass extends SQLiteOpenHelper {
             db.execSQL(query);
         }
         return true;
+    }
+    public void deleteData(){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM "+ TABLE_NAME);
     }
 
 //    public void addColumn(SQLiteDatabase sqLiteDatabase, String new_column) {

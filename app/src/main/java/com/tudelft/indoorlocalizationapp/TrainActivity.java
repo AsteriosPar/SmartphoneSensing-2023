@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -48,7 +49,11 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         Intent intent = getIntent();
         cell = intent.getStringExtra("key");
 
+        // Initialize Local Database
+        DBClass = new DatabaseClass(this);
+
         Button btn_train = (Button) findViewById(R.id.btn_train);
+        Button btn_back = (Button) findViewById(R.id.btn_back);
         txt_train = (ListView) findViewById(R.id.text_train);
         TextView txt_train_title = findViewById(R.id.text_train_title);
 
@@ -63,6 +68,7 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
 
         // Connect button to listener
         btn_train.setOnClickListener(this);
+        btn_back.setOnClickListener(this);
     }
 
     public void checkIfEmpty(List<ScanResult> scanResults) {
@@ -88,28 +94,34 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
     }
     @Override
     public void onClick(View v) {
-        // Set wifi manager.
-        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if (v.getId() == R.id.btn_train) {
+            // Set wifi manager.
+            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
-            @RequiresApi(api = Build.VERSION_CODES.M)
-            @Override
-            public void onReceive(Context c, Intent intent) {
-                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                    scanSuccess();
+            BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+                @RequiresApi(api = Build.VERSION_CODES.M)
+                @Override
+                public void onReceive(Context c, Intent intent) {
+                    if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+                        scanSuccess();
+                    }
                 }
+            };
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+            getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
+
+            boolean success = wifiManager.startScan();
+            if (!success) {
+                Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
+                toast.show();
             }
-        };
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
-
-        boolean success = wifiManager.startScan();
-        if (!success) {
-            Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
-            toast.show();
         }
+        else {
+            Intent back = new Intent(TrainActivity.this, MainActivity.class);
+            TrainActivity.this.startActivity(back);
+        }
+
     }
 
     public void scanSuccess(){
@@ -120,14 +132,9 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
             return;
         }
         if (runLocationPermissionCheck()) {
-            // Initialize Local Database
-            DBClass = new DatabaseClass(this);
-//            // Start a wifi scan.
-//            wifiManager.startScan();
             // Store results in a list.
             List<ScanResult> scanResults = wifiManager.getScanResults();
             checkIfEmpty(scanResults);
-
             // Write results to a label
             adapter.clear();
             for (ScanResult scanResult : scanResults) {
