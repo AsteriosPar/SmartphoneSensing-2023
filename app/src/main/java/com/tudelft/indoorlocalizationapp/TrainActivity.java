@@ -1,16 +1,20 @@
 package com.tudelft.indoorlocalizationapp;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -31,6 +35,7 @@ import java.util.List;
 
 public class TrainActivity extends AppCompatActivity implements View.OnClickListener {
     private ListView txt_train;
+    private WifiManager wifiManager;
     ArrayList<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
     DatabaseClass DBClass;
@@ -84,7 +89,30 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
     @Override
     public void onClick(View v) {
         // Set wifi manager.
-        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+        BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+            @RequiresApi(api = Build.VERSION_CODES.M)
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+                    scanSuccess();
+                }
+            }
+        };
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
+
+        boolean success = wifiManager.startScan();
+        if (!success) {
+            Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
+            toast.show();
+        }
+    }
+
+    public void scanSuccess(){
         // Check if WiFi permission is granted
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
@@ -94,12 +122,11 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         if (runLocationPermissionCheck()) {
             // Initialize Local Database
             DBClass = new DatabaseClass(this);
-            // Start a wifi scan.
-            wifiManager.startScan();
+//            // Start a wifi scan.
+//            wifiManager.startScan();
             // Store results in a list.
             List<ScanResult> scanResults = wifiManager.getScanResults();
             checkIfEmpty(scanResults);
-
 
             // Write results to a label
             adapter.clear();
