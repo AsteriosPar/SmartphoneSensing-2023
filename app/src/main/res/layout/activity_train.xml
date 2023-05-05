@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="Scan for WIFI "
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btn_back"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
@@ -23,8 +23,7 @@
         android:text="Back"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn_train"
-        app:rippleColor="@color/material_dynamic_neutral_variant60" />
+        app:layout_constraintStart_toEndOf="@+id/btn_train" />
 
     <TextView
         android:id="@+id/text_train_title"

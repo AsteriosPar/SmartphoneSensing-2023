@@ -3,6 +3,7 @@ package com.tudelft.indoorlocalizationapp;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.Manifest;
 import android.app.Activity;
@@ -40,7 +41,18 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
     ArrayList<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
     DatabaseClass DBClass;
-    public String cell;
+    String cell;
+    BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        @Override
+        public void onReceive(Context c, Intent intent) {
+            boolean success = intent.getBooleanExtra(
+                    WifiManager.EXTRA_RESULTS_UPDATED, false);
+            if (success) {
+                scanSuccess();
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +83,20 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         btn_back.setOnClickListener(this);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        getApplicationContext().unregisterReceiver(wifiScanReceiver);
+    }
+
+    public void onResume() {
+        super.onResume();
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
+    }
+
     public void checkIfEmpty(List<ScanResult> scanResults) {
         if (scanResults.isEmpty()) {
             Toast toast = Toast.makeText(getApplicationContext(), "No WiFi APs detected!", Toast.LENGTH_SHORT);
@@ -97,20 +123,6 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         if (v.getId() == R.id.btn_train) {
             // Set wifi manager.
             wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-            BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
-                @RequiresApi(api = Build.VERSION_CODES.M)
-                @Override
-                public void onReceive(Context c, Intent intent) {
-                    if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
-                        scanSuccess();
-                    }
-                }
-            };
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-            getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
-
             boolean success = wifiManager.startScan();
             if (!success) {
                 Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
@@ -118,10 +130,8 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
             }
         }
         else {
-            Intent back = new Intent(TrainActivity.this, MainActivity.class);
-            TrainActivity.this.startActivity(back);
+            finish();
         }
-
     }
 
     public void scanSuccess(){
