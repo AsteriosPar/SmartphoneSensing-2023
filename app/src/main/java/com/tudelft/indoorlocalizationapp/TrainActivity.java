@@ -77,7 +77,7 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         DBClass = new DatabaseClass(this);
 
         Button btn_train = (Button) findViewById(R.id.btn_train);
-        Button btn_back = (Button) findViewById(R.id.btn_back);
+//        Button btn_back = (Button) findViewById(R.id.btn_back);
         txt_train = (ListView) findViewById(R.id.text_train);
         TextView txt_train_title = findViewById(R.id.text_train_title);
 
@@ -93,7 +93,7 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
 
         // Connect button to listener
         btn_train.setOnClickListener(this);
-        btn_back.setOnClickListener(this);
+//        btn_back.setOnClickListener(this);
     }
 
     @Override
@@ -142,9 +142,9 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
                 toast.show();
             }
         }
-        else {
-            finish();
-        }
+//        else {
+//            finish();
+//        }
     }
 
     public void scanSuccess(){
@@ -193,7 +193,7 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
     void updateSamplesView(int samples){
         // Update the samples counter text
         TextView txt_count = findViewById(R.id.text_counter);
-        txt_count.setText(String.valueOf(samples));
+        txt_count.setText("Measurements: " + samples);
     }
     void updateSampleNum(int samples){
         switch (cell){

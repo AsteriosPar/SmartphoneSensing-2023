@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         txt4.setOnClickListener(this);
         Button btn_start = findViewById(R.id.btn_start);
         btn_start.setOnClickListener(this);
-        Button btn_delete = findViewById(R.id.btn_delete);
+        ImageView btn_delete = findViewById(R.id.btn_delete);
         btn_delete.setOnClickListener(this);
 
         db = new DatabaseClass(this);
