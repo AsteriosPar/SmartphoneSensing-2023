@@ -11,6 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.net.wifi.ScanResult;
@@ -18,6 +19,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -38,9 +40,14 @@ import java.util.List;
 public class TrainActivity extends AppCompatActivity implements View.OnClickListener {
     private ListView txt_train;
     private WifiManager wifiManager;
+    private SharedPreferences mPreferences;
+    private SharedPreferences.Editor mEditor;
     ArrayList<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
     DatabaseClass DBClass;
+    int new_samples=0;
+
+
     String cell;
     BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
         @RequiresApi(api = Build.VERSION_CODES.M)
@@ -60,6 +67,11 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         setContentView(R.layout.activity_train);
         Intent intent = getIntent();
         cell = intent.getStringExtra("key");
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mEditor = mPreferences.edit();
+
+        new_samples = getSamples();
+        updateSamplesView(new_samples);
 
         // Initialize Local Database
         DBClass = new DatabaseClass(this);
@@ -68,6 +80,7 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         Button btn_back = (Button) findViewById(R.id.btn_back);
         txt_train = (ListView) findViewById(R.id.text_train);
         TextView txt_train_title = findViewById(R.id.text_train_title);
+
 
         // Set Title with the appropriate cell name.
         txt_train_title.setText("Go to location " + cell + " and press <Scan> to detect WIFI signal");
@@ -135,6 +148,7 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
     }
 
     public void scanSuccess(){
+
         // Check if WiFi permission is granted
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
@@ -152,13 +166,61 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
                 // Print results
                 adapter.add(str);
                 // Save results in database
-                boolean apAdded = DBClass.addData(scanResult.BSSID, scanResult.level, cell);
+                boolean apAdded = DBClass.addData(scanResult.BSSID, scanResult.level, cell, ("M"+new_samples));
                 if (!apAdded) {
                     Toast toast = Toast.makeText(getApplicationContext(), "Problem writing in database", Toast.LENGTH_SHORT);
                     toast.show();
                 }
-
             }
+            new_samples = increaseSampleNum(new_samples);
         }
+    }
+
+    int getSamples(){
+        switch (cell){
+            case "C1":
+                return mPreferences.getInt("c1_samples", 0);
+            case "C2":
+                return mPreferences.getInt("c2_samples", 0);
+            case "C3":
+                return mPreferences.getInt("c3_samples", 0);
+            case "C4":
+                return mPreferences.getInt("c4_samples", 0);
+            default:
+                return 0;
+        }
+    }
+    void updateSamplesView(int samples){
+        // Update the samples counter text
+        TextView txt_count = findViewById(R.id.text_counter);
+        txt_count.setText(String.valueOf(samples));
+    }
+    void updateSampleNum(int samples){
+        switch (cell){
+            case "C1":
+                mEditor.putInt("c1_samples", samples);
+                break;
+            case "C2":
+                mEditor.putInt("c2_samples", samples);
+                break;
+            case "C3":
+                mEditor.putInt("c3_samples", samples);
+                break;
+            default:
+                mEditor.putInt("c4_samples", samples);
+        }
+        mEditor.apply();
+        updateSamplesView(samples);
+    }
+    int increaseSampleNum(int samples) {
+        if ((samples+1) > 9) {
+            samples = 9;
+            Toast.makeText(getApplicationContext(), "Reached maximum number of scan measurements", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            samples++;
+            updateSampleNum(samples);
+        }
+        return samples;
     }
 }

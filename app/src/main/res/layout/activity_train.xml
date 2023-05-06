@@ -53,4 +53,16 @@
         app:layout_constraintTop_toBottomOf="@+id/text_train_title"
         app:srcCompat="@drawable/ic_sensor" />
 
+    <TextView
+        android:id="@+id/text_counter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:gravity="center"
+        android:textSize="30dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_train"
+        app:layout_constraintStart_toStartOf="parent"
+    />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

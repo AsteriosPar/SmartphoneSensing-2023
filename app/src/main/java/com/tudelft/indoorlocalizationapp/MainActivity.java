@@ -4,8 +4,12 @@ import androidx.annotation.IntDef;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -15,6 +19,8 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     DatabaseClass db;
+    private SharedPreferences mPreferences;
+    private SharedPreferences.Editor mEditor;
     public static final int ACTIVITY_STANDING = 0;
     public static final int ACTIVITY_WALKING = 1;
     public static final int ACTIVITY_RUNNING = 2;
@@ -23,6 +29,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mEditor = mPreferences.edit();
+
+        refreshSamples();
 
         TextView txt1 = findViewById(R.id.textC1);
         txt1.setOnClickListener(this);
@@ -38,6 +49,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_delete.setOnClickListener(this);
 
         db = new DatabaseClass(this);
+    }
+    @Override
+
+    public void onResume() {
+        super.onResume();
+        refreshSamples();
+    }
+
+    void refreshSamples(){
+        if (mPreferences.getInt("c1_samples", 0) == 0) {
+            findViewById(R.id.error1).setVisibility(View.VISIBLE);
+        }
+        else {
+            findViewById(R.id.error1).setVisibility(View.GONE);
+        }
+        if (mPreferences.getInt("c2_samples", 0) == 0) {
+            findViewById(R.id.error2).setVisibility(View.VISIBLE);
+        }
+        else {
+            findViewById(R.id.error2).setVisibility(View.GONE);
+        }
+        if (mPreferences.getInt("c3_samples", 0) == 0) {
+            findViewById(R.id.error3).setVisibility(View.VISIBLE);
+        }
+        else {
+            findViewById(R.id.error3).setVisibility(View.GONE);
+        }
+        if (mPreferences.getInt("c4_samples", 0) == 0) {
+            findViewById(R.id.error4).setVisibility(View.VISIBLE);
+        }
+        else {
+            findViewById(R.id.error4).setVisibility(View.GONE);
+        }
+
+
     }
 
     void darkenBlocks() {
@@ -76,9 +122,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ImageView decision = applyKNN();
             setBrightBlock(decision);
         } else if (v.getId() == R.id.btn_delete){
-            db.deleteData();
+            db.deleteAllData();
+            mEditor.putInt("c1_samples", 0);
+            mEditor.apply();
+            mEditor.putInt("c2_samples", 0);
+            mEditor.apply();
+            mEditor.putInt("c3_samples", 0);
+            mEditor.apply();
+            mEditor.putInt("c4_samples", 0);
+            mEditor.apply();
             Toast.makeText(getApplicationContext(), "Training data deleted", Toast.LENGTH_SHORT).show();
-        } else {
+            refreshSamples();
+        }
+        else {
             String cell = ((TextView) v).getText().toString();
             Intent train = new Intent(MainActivity.this, TrainActivity.class);
             train.putExtra("key", cell); //Optional parameters
