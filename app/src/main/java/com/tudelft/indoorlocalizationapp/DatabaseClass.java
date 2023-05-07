@@ -71,4 +71,14 @@ public class DatabaseClass extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DELETE FROM "+ cell);
     }
+
+    public boolean isNull(String access_point, String cell, String measurement) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + measurement + " FROM " + cell + " WHERE " + AP + " = '" + access_point + "'", null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            return cursor.isNull(0);
+        }
+        return false;
+    }
 }

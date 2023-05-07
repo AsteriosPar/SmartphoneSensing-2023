@@ -148,7 +148,6 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
     }
 
     public void scanSuccess(){
-
         // Check if WiFi permission is granted
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
