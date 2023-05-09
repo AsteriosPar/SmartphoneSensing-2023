@@ -2,12 +2,14 @@ package com.tudelft.indoorlocalizationapp;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -166,22 +168,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             boolean success = wifiManager.startScan();
             if (!success) {
+
                 Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
                 toast.show();
             }
         } else if (v.getId() == R.id.btn_delete){
-            db.deleteAllData();
-            mEditor.putInt("c1_samples", 0);
-            mEditor.apply();
-            mEditor.putInt("c2_samples", 0);
-            mEditor.apply();
-            mEditor.putInt("c3_samples", 0);
-            mEditor.apply();
-            mEditor.putInt("c4_samples", 0);
-            mEditor.apply();
-            darkenBlocks();
-            Toast.makeText(getApplicationContext(), "Training data deleted", Toast.LENGTH_SHORT).show();
-            refreshSamples();
+            new AlertDialog.Builder(this)
+                    .setTitle("Delete Records")
+                    .setMessage("Do you really want to delete all database records?")
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            Toast.makeText(MainActivity.this, "This function has been currently disabled", Toast.LENGTH_SHORT).show();
+//                            db.deleteAllData();
+//                            mEditor.putInt("c1_samples", 0);
+//                            mEditor.apply();
+//                            mEditor.putInt("c2_samples", 0);
+//                            mEditor.apply();
+//                            mEditor.putInt("c3_samples", 0);
+//                            mEditor.apply();
+//                            mEditor.putInt("c4_samples", 0);
+//                            mEditor.apply();
+//                            darkenBlocks();
+//                            Toast.makeText(getApplicationContext(), "Training data deleted", Toast.LENGTH_SHORT).show();
+//                            refreshSamples();
+                        }})
+                    .setNegativeButton(android.R.string.no, null).show();
         }
         else {
             String cell = ((TextView) v).getText().toString();
