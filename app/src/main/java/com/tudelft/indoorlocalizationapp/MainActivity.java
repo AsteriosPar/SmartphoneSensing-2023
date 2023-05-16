@@ -138,14 +138,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         refreshSamples();
 
-        TextView txt1 = findViewById(R.id.textC1);
-        txt1.setOnClickListener(this);
-        TextView txt2 = findViewById(R.id.textC2);
-        txt2.setOnClickListener(this);
-        TextView txt3 = findViewById(R.id.textC3);
-        txt3.setOnClickListener(this);
-        TextView txt4 = findViewById(R.id.textC4);
-        txt4.setOnClickListener(this);
+//        Set listeners to all buttons
+        TextView[] textViews = new TextView[20];
+        for (int j = 1; j < 21; j++) {
+            String txt = "textC"+j;
+            int txtView = getResources().getIdentifier(txt, "id", getPackageName());
+            textViews[j] = ((TextView) findViewById(txtView));
+            textViews[j].setOnClickListener(this);
+        }
         Button btn_start = findViewById(R.id.btn_start);
         btn_start.setOnClickListener(this);
         ImageView btn_delete = findViewById(R.id.btn_delete);
@@ -292,6 +292,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return stdDev;
     }
 
+//    TODO: Absolutely get rid of SharedPreferences, added specific table for this in database
     private void refreshSamples() {
         if (mPreferences.getInt("c1_samples", 0) == 0) {
             findViewById(R.id.error1).setVisibility(View.VISIBLE);
@@ -312,30 +313,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             findViewById(R.id.error4).setVisibility(View.VISIBLE);
         } else {
             findViewById(R.id.error4).setVisibility(View.GONE);
-        }
-    }
-
-    private void darkenBlocks() {
-        findViewById(R.id.block_C1).setBackgroundColor(Color.parseColor("#88000000"));
-        findViewById(R.id.block_C2).setBackgroundColor(Color.parseColor("#88000000"));
-        findViewById(R.id.block_C3).setBackgroundColor(Color.parseColor("#88000000"));
-        findViewById(R.id.block_C4).setBackgroundColor(Color.parseColor("#88000000"));
-    }
-
-    private void setBrightBlock(int id) {
-        darkenBlocks();
-        switch (id) {
-            case 0:
-                findViewById(R.id.block_C1).setBackgroundColor(Color.parseColor("#FFDD77"));
-                break;
-            case 1:
-                findViewById(R.id.block_C2).setBackgroundColor(Color.parseColor("#FFDD77"));
-                break;
-            case 2:
-                findViewById(R.id.block_C3).setBackgroundColor(Color.parseColor("#FFDD77"));
-                break;
-            default:
-                findViewById(R.id.block_C4).setBackgroundColor(Color.parseColor("#FFDD77"));
         }
     }
 
@@ -383,6 +360,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void darkenBlocks() {
+        for (int j = 1; j < 21; j++) {
+            String img = "block_C"+j;
+            int imgView = getResources().getIdentifier(img, "id", getPackageName());
+            findViewById(imgView).setBackgroundColor(Color.parseColor("#88000000"));
+        }
+    }
+
+    private void setBrightBlock(int id) {
+        darkenBlocks();
+        String name = "block_C"+(id+1);
+        int view = getResources().getIdentifier(name, "id", getPackageName());
+        findViewById(view).setBackgroundColor(Color.parseColor("#FFDD77"));
+    }
+
     private void makeToast(String message) {
         Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
         toast.show();
@@ -404,6 +396,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        SCAN CURRENT WIFI PHASE
         if (runLocationPermissionCheck()) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                makeToast("Permission for WiFi scan not granted");
+                return;
+            }
             // Store results in a list.
             List<ScanResult> scanResults = wifiManager.getScanResults();
             checkIfEmpty(scanResults);

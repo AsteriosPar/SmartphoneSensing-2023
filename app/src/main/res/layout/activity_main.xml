@@ -726,7 +726,7 @@
                     android:layout_marginRight="10dp">
 
                     <ImageView
-                        android:id="@+id/block_E1"
+                        android:id="@+id/block_C17"
                         android:layout_width="60dp"
                         android:layout_height="80dp"
                         android:background="#88000000"
@@ -736,7 +736,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
-                        android:id="@+id/textE1"
+                        android:id="@+id/textC17"
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:gravity="center"
@@ -749,14 +749,14 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/errorE1"
+                        android:id="@+id/errorC17"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         android:layout_marginEnd="5dp"
                         android:layout_marginRight="5dp"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/block_E1"
+                        app:layout_constraintTop_toTopOf="@+id/block_C17"
                         app:srcCompat="@drawable/_897ed72d876f16a4a9c2acb2f80c8f9" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
                 <androidx.constraintlayout.widget.ConstraintLayout
@@ -766,7 +766,7 @@
                     android:layout_marginRight="10dp">
 
                     <ImageView
-                        android:id="@+id/block_E2"
+                        android:id="@+id/block_C18"
                         android:layout_width="60dp"
                         android:layout_height="80dp"
                         android:background="#88000000"
@@ -776,7 +776,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
-                        android:id="@+id/textE2"
+                        android:id="@+id/textC18"
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:gravity="center"
@@ -789,14 +789,14 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/errorE2"
+                        android:id="@+id/errorC18"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         android:layout_marginEnd="5dp"
                         android:layout_marginRight="5dp"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/block_E2"
+                        app:layout_constraintTop_toTopOf="@+id/block_C18"
                         app:srcCompat="@drawable/_897ed72d876f16a4a9c2acb2f80c8f9" />
                 </androidx.constraintlayout.widget.ConstraintLayout><androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="wrap_content"
@@ -805,7 +805,7 @@
                 android:layout_marginRight="10dp">
 
                 <ImageView
-                    android:id="@+id/block_E3"
+                    android:id="@+id/block_C19"
                     android:layout_width="60dp"
                     android:layout_height="80dp"
                     android:background="#88000000"
@@ -815,7 +815,7 @@
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/textE3"
+                    android:id="@+id/textC19"
                     android:layout_width="match_parent"
                     android:layout_height="80dp"
                     android:gravity="center"
@@ -828,14 +828,14 @@
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <ImageView
-                    android:id="@+id/errorE3"
+                    android:id="@+id/errorC19"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
                     android:layout_marginEnd="5dp"
                     android:layout_marginRight="5dp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="@+id/block_E3"
+                    app:layout_constraintTop_toTopOf="@+id/block_C19"
                     app:srcCompat="@drawable/_897ed72d876f16a4a9c2acb2f80c8f9" />
             </androidx.constraintlayout.widget.ConstraintLayout>
                 <androidx.constraintlayout.widget.ConstraintLayout
@@ -845,7 +845,7 @@
                     android:layout_marginRight="10dp">
 
                     <ImageView
-                        android:id="@+id/block_E4"
+                        android:id="@+id/block_C20"
                         android:layout_width="60dp"
                         android:layout_height="80dp"
                         android:background="#88000000"
@@ -855,7 +855,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
-                        android:id="@+id/textE4"
+                        android:id="@+id/textC20"
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:gravity="center"
@@ -868,14 +868,14 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/errorE4"
+                        android:id="@+id/errorC20"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         android:layout_marginEnd="5dp"
                         android:layout_marginRight="5dp"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="@+id/block_E4"
+                        app:layout_constraintTop_toTopOf="@+id/block_C20"
                         app:srcCompat="@drawable/_897ed72d876f16a4a9c2acb2f80c8f9" />
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </TableRow>
