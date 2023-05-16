@@ -8,10 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 public class DatabaseClass extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "KNN_Database";
+    private static final String DATABASE_NAME = "Bayesian_Database";
     private static final String AP = "access_points";
-    private static final String CELL_NAME = "CELL_NAME";
-    private static final String CELLS = "CELLS";
 
     public DatabaseClass(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -19,23 +17,30 @@ public class DatabaseClass extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE CELLS (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + CELL_NAME + " TEXT, MEASUREMENTS INTEGER DEFAULT 0)");
+        for (int i = 1; i < 21; i++) {
+            String query = "CREATE TABLE C" + i + " (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT";
+            for (int j = 1; j < 41; j++) {
+                query += ", M" + j + " INTEGER";
+            }
+            query += ")";
+            db.execSQL(query);
+        }
     }
-
-    public void addCell(String cell_name) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("CREATE TABLE " + cell_name + " (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT, M0 INTEGER, M1 INTEGER, M2 INTEGER, M3 INTEGER, M4 INTEGER, M5 INTEGER, M6 INTEGER, M7 INTEGER, M8 INTEGER, M9 INTEGER)");
-    }
-
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-        db.execSQL("DROP TABLE IF EXISTS CELLS");
-        db.execSQL("DROP TABLE IF EXISTS C1");
-        db.execSQL("DROP TABLE IF EXISTS C2");
-        db.execSQL("DROP TABLE IF EXISTS C3");
-        db.execSQL("DROP TABLE IF EXISTS C4");
+        for (int j = 1; j < 21; j++) {
+            db.execSQL("DROP TABLE IF EXISTS C" + j);
+        }
         onCreate(db);
     }
+    public void deleteAllData() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        for (int j = 1; j < 21; j++) {
+            db.execSQL("DELETE FROM C" + j);
+        }
+    }
+
+//    Parses all the measurements in a cell to find a specific AP
     public boolean checkAPExists(String access_point, String cell) {
         SQLiteDatabase db = this.getReadableDatabase();
         String st = "select * from " + cell + " where " + AP + " = '" + access_point + "'";
@@ -43,45 +48,26 @@ public class DatabaseClass extends SQLiteOpenHelper {
         return data.moveToNext();
     }
 
+//    Adds AP id (if it does not exist) and RSS signal values to chosen measurement
     public boolean addData(String ar, int signal_strength, String cell, String cur_column) {
         SQLiteDatabase db = this.getWritableDatabase();
-
-        Cursor cursor = db.rawQuery("SELECT MEASUREMENTS FROM " + CELLS + " WHERE " + CELL_NAME + " = '" + cell + "'", null);
-        if (cursor != null && cursor.moveToFirst()) {
-            cursor.getInt(0);
-        }
-
-
         if (!checkAPExists(ar, cell)) {
             ContentValues contentValues = new ContentValues();
             contentValues.put(AP, ar);
             contentValues.put(cur_column, signal_strength);
             long result = db.insert(cell, null, contentValues);
             return result != -1;
-        }
-        else {
+        } else {
             String query = "UPDATE " + cell + " SET " + cur_column + " = '" + signal_strength + "' WHERE " + AP + " = '" + ar + "'";
             db.execSQL(query);
         }
         return true;
     }
-    public void deleteAllData(){
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("DELETE FROM C1");
-        db.execSQL("DELETE FROM C2");
-        db.execSQL("DELETE FROM C3");
-        db.execSQL("DELETE FROM C4");
-    }
 
-    public void deleteData(String cell){
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("DELETE FROM "+ cell);
-    }
-
+//    Checks if a value in a table is null value
     public boolean isNull(String access_point, String cell, String measurement) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + measurement + " FROM " + cell + " WHERE " + AP + " = '" + access_point + "'", null);
-
         if (cursor != null && cursor.moveToFirst()) {
             return cursor.isNull(0);
         }

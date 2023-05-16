@@ -43,10 +43,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     DatabaseClass db;
     private SharedPreferences mPreferences;
     private SharedPreferences.Editor mEditor;
-    public static final int ACTIVITY_STANDING = 0;
-    public static final int ACTIVITY_WALKING = 1;
-    public static final int ACTIVITY_RUNNING = 2;
-
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor gyroscope;
