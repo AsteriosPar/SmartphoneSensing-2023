@@ -25,6 +25,9 @@ public class DatabaseClass extends SQLiteOpenHelper {
             query += ")";
             db.execSQL(query);
         }
+
+//        Add table that stores the measurements of each cell
+        db.execSQL("CREATE TABLE MEASUREMENTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT, COLUMNS INTEGER)");
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
@@ -72,5 +75,17 @@ public class DatabaseClass extends SQLiteOpenHelper {
             return cursor.isNull(0);
         }
         return false;
+    }
+
+//    Returns the number of measurements made in a cell. If none, it returns 0.
+    public int getPopulatedColumns(String cell){
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COLUMNS FROM MEASUREMENTS WHERE NAME = '" + cell + "'", null);
+        if (cursor != null && cursor.moveToFirst()) {
+            if (!cursor.isNull(0)){
+                return cursor.getInt(0);
+            }
+        }
+        return 0;
     }
 }
