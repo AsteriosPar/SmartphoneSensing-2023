@@ -254,7 +254,7 @@
             android:id="@+id/activity_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-
+            android:textSize="28dp"
             app:layout_constraintBottom_toTopOf="@id/btn_start"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
