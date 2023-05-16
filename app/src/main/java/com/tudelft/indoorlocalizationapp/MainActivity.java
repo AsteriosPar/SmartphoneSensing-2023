@@ -32,12 +32,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 import java.util.Vector;
+
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,SensorEventListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
     DatabaseClass db;
     private SharedPreferences mPreferences;
@@ -185,6 +186,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // No gyroscope!
         }
     }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -228,16 +230,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //            currentZ.setText(String.format("%.2f", aZ));
 
             Vector<Double> v1 = new Vector<Double>();
-            double accel = Math.sqrt(aX*aX+aY*aY+aZ*aZ);
-            double gyro = Math.sqrt(gX*gX+gY*gY+gZ*gZ);
+            double accel = Math.sqrt(aX * aX + aY * aY + aZ * aZ);
+            double gyro = Math.sqrt(gX * gX + gY * gY + gZ * gZ);
             collected_accel.add(accel);
             collected_gyro.add(gyro);
             counter = counter + 1;
 
             if (counter >= 10) {
-                double testData[] = {calculateSD(collected_accel),calculateSD(collected_gyro)};
+                double testData[] = {calculateSD(collected_accel), calculateSD(collected_gyro)};
                 int k = 3;
-                int activity_detected = knn.classify(jumping,walking,standing,testData, k);
+                int activity_detected = knn.classify(jumping, walking, standing, testData, k);
                 collected_gyro.clear();
                 collected_accel.clear();
                 counter = 0;
@@ -294,40 +296,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return stdDev;
     }
 
-    void refreshSamples(){
+    private void refreshSamples() {
         if (mPreferences.getInt("c1_samples", 0) == 0) {
             findViewById(R.id.error1).setVisibility(View.VISIBLE);
-        }
-        else {
+        } else {
             findViewById(R.id.error1).setVisibility(View.GONE);
         }
         if (mPreferences.getInt("c2_samples", 0) == 0) {
             findViewById(R.id.error2).setVisibility(View.VISIBLE);
-        }
-        else {
+        } else {
             findViewById(R.id.error2).setVisibility(View.GONE);
         }
         if (mPreferences.getInt("c3_samples", 0) == 0) {
             findViewById(R.id.error3).setVisibility(View.VISIBLE);
-        }
-        else {
+        } else {
             findViewById(R.id.error3).setVisibility(View.GONE);
         }
         if (mPreferences.getInt("c4_samples", 0) == 0) {
             findViewById(R.id.error4).setVisibility(View.VISIBLE);
-        }
-        else {
+        } else {
             findViewById(R.id.error4).setVisibility(View.GONE);
         }
     }
 
-    void darkenBlocks() {
+    private void darkenBlocks() {
         findViewById(R.id.block_C1).setBackgroundColor(Color.parseColor("#88000000"));
         findViewById(R.id.block_C2).setBackgroundColor(Color.parseColor("#88000000"));
         findViewById(R.id.block_C3).setBackgroundColor(Color.parseColor("#88000000"));
         findViewById(R.id.block_C4).setBackgroundColor(Color.parseColor("#88000000"));
     }
-    void setBrightBlock(int id) {
+
+    private void setBrightBlock(int id) {
         darkenBlocks();
         switch (id) {
             case 0:
@@ -343,23 +342,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 findViewById(R.id.block_C4).setBackgroundColor(Color.parseColor("#FFDD77"));
         }
     }
+
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.btn_start) {
-            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            boolean success = wifiManager.startScan();
-            if (!success) {
-
-                Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
-                toast.show();
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                makeToast("Permission for WiFi scan not granted");
+                return;
             }
-        } else if (v.getId() == R.id.btn_delete){
+            if (runLocationPermissionCheck()) {
+                wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                boolean success = wifiManager.startScan();
+                if (!success) {
+                    makeToast("Wifi Scan is not ready yet");
+                }
+            }
+        } else if (v.getId() == R.id.btn_delete) {
             new AlertDialog.Builder(this)
                     .setTitle("Delete Records")
                     .setMessage("Do you really want to delete all database records?")
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
-                            Toast.makeText(MainActivity.this, "This function has been currently disabled", Toast.LENGTH_SHORT).show();
+                            makeToast("This function has been currently disabled");
 //                            db.deleteAllData();
 //                            mEditor.putInt("c1_samples", 0);
 //                            mEditor.apply();
@@ -372,10 +376,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                            darkenBlocks();
 //                            Toast.makeText(getApplicationContext(), "Training data deleted", Toast.LENGTH_SHORT).show();
 //                            refreshSamples();
-                        }})
+                        }
+                    })
                     .setNegativeButton(android.R.string.no, null).show();
-        }
-        else {
+        } else {
             String cell = ((TextView) v).getText().toString();
             Intent train = new Intent(MainActivity.this, TrainActivity.class);
             train.putExtra("key", cell); //Optional parameters
@@ -383,7 +387,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    public void applyKNN(){
+    private void makeToast(String message) {
+        Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    private void applyKNN() {
         int K = 2;
         int[] measurements_num = {
                 mPreferences.getInt("c1_samples", 0),
@@ -398,11 +407,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Arrays.fill(distance_sum, 0);
 
 //        SCAN CURRENT WIFI PHASE
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
-            toast.show();
-            return;
-        }
         if (runLocationPermissionCheck()) {
             // Store results in a list.
             List<ScanResult> scanResults = wifiManager.getScanResults();
@@ -413,15 +417,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 //        PREPARING THE DISTANCE VECTOR PHASE
-        for (String scan: scannedAPs) {
+        for (String scan : scannedAPs) {
 //            For every cell
             int pointer = 0;
-            for (int i=0;i<4;i++) {
+            for (int i = 0; i < 4; i++) {
 //                For every measurement
-                for (int j=pointer; j<pointer+measurements_num[i]; j++) {
+                for (int j = pointer; j < pointer + measurements_num[i]; j++) {
                     if (!db.checkAPExists(scan, table_names[i])) {
                         distance_sum[j]++;
-                    } else if (db.isNull(scan, table_names[i], ("M" + (j-pointer)))) {
+                    } else if (db.isNull(scan, table_names[i], ("M" + (j - pointer)))) {
                         distance_sum[j]++;
                     }
                 }
@@ -432,59 +436,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        DETERMINING THE OUTPUT RESULT PHASE
         int[] id_table = new int[total_measurements];
-        for (int i=0;i<total_measurements;i++){
-            if (i<measurements_num[0]) {
+        for (int i = 0; i < total_measurements; i++) {
+            if (i < measurements_num[0]) {
                 id_table[i] = 0;
-            }
-            else if (i<(measurements_num[0] + measurements_num[1])) {
+            } else if (i < (measurements_num[0] + measurements_num[1])) {
                 id_table[i] = 1;
-            }
-            else if (i<(measurements_num[0] + measurements_num[1] + measurements_num[2])) {
+            } else if (i < (measurements_num[0] + measurements_num[1] + measurements_num[2])) {
                 id_table[i] = 2;
-            }
-            else {
+            } else {
                 id_table[i] = 3;
             }
         }
 //        Sort
         bubbleSort(distance_sum, id_table);
         int[] neighbours_counter = {0, 0, 0, 0};
-        for (int id: id_table){
+        for (int id : id_table) {
             neighbours_counter[id]++;
-            if (neighbours_counter[id] == K){
+            if (neighbours_counter[id] == K) {
                 setBrightBlock(id);
                 break;
             }
         }
     }
 
-    public static void bubbleSort(int[] ap, int[] id) {
+    private static void bubbleSort(int[] ap, int[] id) {
         boolean sorted = false;
         int temp;
         int temp2;
-        while(!sorted) {
+        while (!sorted) {
             sorted = true;
             for (int i = 0; i < ap.length - 1; i++) {
-                if (ap[i] > ap[i+1]) {
+                if (ap[i] > ap[i + 1]) {
                     temp = ap[i];
-                    ap[i] = ap[i+1];
-                    ap[i+1] = temp;
+                    ap[i] = ap[i + 1];
+                    ap[i + 1] = temp;
                     temp2 = id[i];
-                    id[i] = id[i+1];
-                    id[i+1] = temp2;
+                    id[i] = id[i + 1];
+                    id[i + 1] = temp2;
                     sorted = false;
                 }
             }
         }
     }
 
-    public void checkIfEmpty(List<ScanResult> scanResults) {
+    private void checkIfEmpty(List<ScanResult> scanResults) {
         if (scanResults.isEmpty()) {
             Toast toast = Toast.makeText(getApplicationContext(), "No WiFi APs detected!", Toast.LENGTH_SHORT);
             toast.show();
         }
     }
-    public boolean runLocationPermissionCheck() {
+
+    private boolean runLocationPermissionCheck() {
         // Set location manager (Location is also necessary)
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
