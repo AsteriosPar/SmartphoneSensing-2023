@@ -388,19 +388,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void applyBayesian() {
+        int H = 5;
         int[] measurements_num = new int[CELLS_NUM];
         int total_measurements = 0;
         for (int i=0;i<CELLS_NUM;i++){
             measurements_num[i] = db.getPopulatedColumns("C"+(i+1));
             total_measurements += measurements_num[i];
         }
-
+        Vector<String> scannedAPs = new Vector<String>();
+        Vector<Integer> scannedRSSs = new Vector<Integer>();
 
 //        1) Gather data
-//        2) Make histogram of the data (1 table per access point)
+
+        if (runLocationPermissionCheck()) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                makeToast("Permission for WiFi scan not granted");
+                return;
+            }
+            List<ScanResult> scanResults = wifiManager.getScanResults();
+            for (ScanResult scanResult : scanResults) {
+                scannedAPs.addElement(scanResult.BSSID);
+                scannedRSSs.addElement(scanResult.level);
+            }
+        }
+
+//        2) Make histogram of the training data (1 table per access point)
+        int[][][] histograms = new int[scannedAPs.size()][CELLS_NUM][100/H];
+
+
+
 //        3) Normalize histogram so that all values in each row is equal to one
 //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
-//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with unifrom prior)
+//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
 //        5) Iterate until stop
 //        6) Choose cell with max posterior
 
