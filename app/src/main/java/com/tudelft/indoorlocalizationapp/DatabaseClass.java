@@ -17,17 +17,22 @@ public class DatabaseClass extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        //        Add table that stores the measurements of each cell
+        db.execSQL("CREATE TABLE MEASUREMENTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT, COLUMNS INTEGER)");
+
         for (int i = 1; i < 21; i++) {
-            String query = "CREATE TABLE C" + i + " (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT";
+            String query = "CREATE TABLE C" + i + " (ID INTEGER PRIMARY KEY AUTOINCREMENT," + AP + " TEXT";
             for (int j = 1; j < 41; j++) {
                 query += ", M" + j + " INTEGER";
             }
             query += ")";
             db.execSQL(query);
-        }
 
-//        Add table that stores the measurements of each cell
-        db.execSQL("CREATE TABLE MEASUREMENTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT, COLUMNS INTEGER)");
+            ContentValues contentValues = new ContentValues();
+            contentValues.put("NAME", "C"+i);
+            contentValues.put("COLUMNS", 0);
+            db.insert("MEASUREMENTS", null, contentValues);
+        }
     }
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
@@ -38,8 +43,10 @@ public class DatabaseClass extends SQLiteOpenHelper {
     }
     public void deleteAllData() {
         SQLiteDatabase db = this.getWritableDatabase();
-        for (int j = 1; j < 21; j++) {
+        for (int j = 17; j < 21; j++) {
             db.execSQL("DELETE FROM C" + j);
+            String query = "UPDATE MEASUREMENTS SET COLUMNS = '0' WHERE NAME = 'C" + j + "'";
+            db.execSQL(query);
         }
     }
 
@@ -87,5 +94,23 @@ public class DatabaseClass extends SQLiteOpenHelper {
             }
         }
         return 0;
+    }
+
+    public void increaseColumnCount(String cell){
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COLUMNS FROM MEASUREMENTS WHERE NAME = '" + cell + "'", null);
+        if (cursor != null && cursor.moveToFirst()) {
+            if (!cursor.isNull(0)){
+                int index = cursor.getInt(0) + 1;
+                if (index<40){
+                    String query = "UPDATE MEASUREMENTS SET COLUMNS = '" + index + "' WHERE NAME = '" + cell + "'";
+                    db.execSQL(query);
+                }
+            }
+            else {
+                String query = "UPDATE MEASUREMENTS SET COLUMNS = '1' WHERE NAME = '" + cell + "'";
+                db.execSQL(query);
+            }
+        }
     }
 }

@@ -740,7 +740,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:gravity="center"
-                        android:text="E1"
+                        android:text="C17"
                         android:textColor="@color/white"
                         android:textSize="25sp"
                         app:layout_constraintBottom_toBottomOf="parent"
@@ -749,7 +749,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/errorC17"
+                        android:id="@+id/error17"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
@@ -780,7 +780,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:gravity="center"
-                        android:text="E2"
+                        android:text="C18"
                         android:textColor="@color/white"
                         android:textSize="25sp"
                         app:layout_constraintBottom_toBottomOf="parent"
@@ -789,7 +789,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/errorC18"
+                        android:id="@+id/error18"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
@@ -819,7 +819,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="80dp"
                     android:gravity="center"
-                    android:text="E3"
+                    android:text="C19"
                     android:textColor="@color/white"
                     android:textSize="25sp"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -828,7 +828,7 @@
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <ImageView
-                    android:id="@+id/errorC19"
+                    android:id="@+id/error19"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="5dp"
@@ -859,7 +859,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="80dp"
                         android:gravity="center"
-                        android:text="E4"
+                        android:text="C20"
                         android:textColor="@color/white"
                         android:textSize="25sp"
                         app:layout_constraintBottom_toBottomOf="parent"
@@ -868,7 +868,7 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <ImageView
-                        android:id="@+id/errorC20"
+                        android:id="@+id/error20"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"

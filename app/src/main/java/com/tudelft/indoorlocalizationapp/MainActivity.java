@@ -40,9 +40,8 @@ import android.hardware.SensorManager;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
+    private static final int CELLS_NUM = 20;
     DatabaseClass db;
-    private SharedPreferences mPreferences;
-    private SharedPreferences.Editor mEditor;
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor gyroscope;
@@ -121,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             boolean success = intent.getBooleanExtra(
                     WifiManager.EXTRA_RESULTS_UPDATED, false);
             if (success) {
-                applyKNN();
+                applyBayesian();
             }
         }
     };
@@ -131,17 +130,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        act = (TextView) findViewById(R.id.activity_value);
-
-        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        mEditor = mPreferences.edit();
-
-        refreshSamples();
-
 //        Set listeners to all buttons
-        TextView[] textViews = new TextView[20];
-        for (int j = 1; j < 21; j++) {
-            String txt = "textC"+j;
+        TextView[] textViews = new TextView[CELLS_NUM];
+        for (int j = 0; j < CELLS_NUM; j++) {
+            String txt = "textC"+(j+1);
             int txtView = getResources().getIdentifier(txt, "id", getPackageName());
             textViews[j] = ((TextView) findViewById(txtView));
             textViews[j].setOnClickListener(this);
@@ -150,8 +142,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_start.setOnClickListener(this);
         ImageView btn_delete = findViewById(R.id.btn_delete);
         btn_delete.setOnClickListener(this);
+        act = (TextView) findViewById(R.id.activity_value);
 
         db = new DatabaseClass(this);
+        refreshWarningIcons();
 
         // Set the sensor manager
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -193,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void onResume() {
         super.onResume();
-        refreshSamples();
+        refreshWarningIcons();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
@@ -291,31 +285,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return stdDev;
     }
-
-//    TODO: Absolutely get rid of SharedPreferences, added specific table for this in database
-    private void refreshSamples() {
-        if (mPreferences.getInt("c1_samples", 0) == 0) {
-            findViewById(R.id.error1).setVisibility(View.VISIBLE);
-        } else {
-            findViewById(R.id.error1).setVisibility(View.GONE);
-        }
-        if (mPreferences.getInt("c2_samples", 0) == 0) {
-            findViewById(R.id.error2).setVisibility(View.VISIBLE);
-        } else {
-            findViewById(R.id.error2).setVisibility(View.GONE);
-        }
-        if (mPreferences.getInt("c3_samples", 0) == 0) {
-            findViewById(R.id.error3).setVisibility(View.VISIBLE);
-        } else {
-            findViewById(R.id.error3).setVisibility(View.GONE);
-        }
-        if (mPreferences.getInt("c4_samples", 0) == 0) {
-            findViewById(R.id.error4).setVisibility(View.VISIBLE);
-        } else {
-            findViewById(R.id.error4).setVisibility(View.GONE);
-        }
-    }
-
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.btn_start) {
@@ -336,19 +305,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     .setMessage("Do you really want to delete all database records?")
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
-                            makeToast("This function has been currently disabled");
-//                            db.deleteAllData();
-//                            mEditor.putInt("c1_samples", 0);
-//                            mEditor.apply();
-//                            mEditor.putInt("c2_samples", 0);
-//                            mEditor.apply();
-//                            mEditor.putInt("c3_samples", 0);
-//                            mEditor.apply();
-//                            mEditor.putInt("c4_samples", 0);
-//                            mEditor.apply();
-//                            darkenBlocks();
-//                            Toast.makeText(getApplicationContext(), "Training data deleted", Toast.LENGTH_SHORT).show();
-//                            refreshSamples();
+//                            makeToast("This function has been currently disabled");
+                            db.deleteAllData();
+                            darkenBlocks();
+                            makeToast("Training data deleted");
+                            refreshWarningIcons();
                         }
                     })
                     .setNegativeButton(android.R.string.no, null).show();
@@ -360,8 +321,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void refreshWarningIcons() {
+        for (int i=1;i<CELLS_NUM+1;i++){
+            String error = "error" + i;
+            int errorId = getResources().getIdentifier(error, "id", getPackageName());
+            if (db.getPopulatedColumns("C"+i)==0){
+                findViewById(errorId).setVisibility(View.VISIBLE);
+            }
+            else {
+                findViewById(errorId).setVisibility(View.GONE);
+            }
+        }
+    }
+
     private void darkenBlocks() {
-        for (int j = 1; j < 21; j++) {
+        for (int j = 1; j < CELLS_NUM+1; j++) {
             String img = "block_C"+j;
             int imgView = getResources().getIdentifier(img, "id", getPackageName());
             findViewById(imgView).setBackgroundColor(Color.parseColor("#88000000"));
@@ -380,75 +354,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         toast.show();
     }
 
-    private void applyKNN() {
-        int K = 2;
-        int[] measurements_num = {
-                mPreferences.getInt("c1_samples", 0),
-                mPreferences.getInt("c2_samples", 0),
-                mPreferences.getInt("c3_samples", 0),
-                mPreferences.getInt("c4_samples", 0)
-        };
-        int total_measurements = measurements_num[0] + measurements_num[1] + measurements_num[2] + measurements_num[3];
-        String[] table_names = {"C1", "C2", "C3", "C4"};
-        Vector<String> scannedAPs = new Vector<String>();
-        int[] distance_sum = new int[total_measurements];
-        Arrays.fill(distance_sum, 0);
+    private boolean runLocationPermissionCheck() {
+        // Set location manager (Location is also necessary)
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-//        SCAN CURRENT WIFI PHASE
-        if (runLocationPermissionCheck()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                makeToast("Permission for WiFi scan not granted");
-                return;
-            }
-            // Store results in a list.
-            List<ScanResult> scanResults = wifiManager.getScanResults();
-            checkIfEmpty(scanResults);
-            for (ScanResult scanResult : scanResults) {
-                scannedAPs.addElement(scanResult.BSSID);
-            }
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            Toast toast = Toast.makeText(getApplicationContext(), "Location Service is required for this action!", Toast.LENGTH_LONG);
+            toast.show();
+            Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(myIntent);
         }
-
-//        PREPARING THE DISTANCE VECTOR PHASE
-        for (String scan : scannedAPs) {
-//            For every cell
-            int pointer = 0;
-            for (int i = 0; i < 4; i++) {
-//                For every measurement
-                for (int j = pointer; j < pointer + measurements_num[i]; j++) {
-                    if (!db.checkAPExists(scan, table_names[i])) {
-                        distance_sum[j]++;
-                    } else if (db.isNull(scan, table_names[i], ("M" + (j - pointer)))) {
-                        distance_sum[j]++;
-                    }
-                }
-                pointer = pointer + measurements_num[i];
-            }
-        }
-//        Passing the sums through a root would give us the euclidean distance but since we have either 0 or 1, it is redundant.
-
-//        DETERMINING THE OUTPUT RESULT PHASE
-        int[] id_table = new int[total_measurements];
-        for (int i = 0; i < total_measurements; i++) {
-            if (i < measurements_num[0]) {
-                id_table[i] = 0;
-            } else if (i < (measurements_num[0] + measurements_num[1])) {
-                id_table[i] = 1;
-            } else if (i < (measurements_num[0] + measurements_num[1] + measurements_num[2])) {
-                id_table[i] = 2;
-            } else {
-                id_table[i] = 3;
-            }
-        }
-//        Sort
-        bubbleSort(distance_sum, id_table);
-        int[] neighbours_counter = {0, 0, 0, 0};
-        for (int id : id_table) {
-            neighbours_counter[id]++;
-            if (neighbours_counter[id] == K) {
-                setBrightBlock(id);
-                break;
-            }
-        }
+        return true;
     }
 
     private static void bubbleSort(int[] ap, int[] id) {
@@ -471,25 +387,85 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void checkIfEmpty(List<ScanResult> scanResults) {
-        if (scanResults.isEmpty()) {
-            Toast toast = Toast.makeText(getApplicationContext(), "No WiFi APs detected!", Toast.LENGTH_SHORT);
-            toast.show();
+    private void applyBayesian() {
+        int[] measurements_num = new int[CELLS_NUM];
+        int total_measurements = 0;
+        for (int i=0;i<CELLS_NUM;i++){
+            measurements_num[i] = db.getPopulatedColumns("C"+(i+1));
+            total_measurements += measurements_num[i];
         }
+
+
+//        1) Gather data
+//        2) Make histogram of the data (1 table per access point)
+//        3) Normalize histogram so that all values in each row is equal to one
+//        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
+//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with unifrom prior)
+//        5) Iterate until stop
+//        6) Choose cell with max posterior
+
+
+
+//        String[] table_names = {"C1", "C2", "C3", "C4"};
+//        Vector<String> scannedAPs = new Vector<String>();
+//        int[] distance_sum = new int[total_measurements];
+//        Arrays.fill(distance_sum, 0);
+//
+////        SCAN CURRENT WIFI PHASE
+//        if (runLocationPermissionCheck()) {
+//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                makeToast("Permission for WiFi scan not granted");
+//                return;
+//            }
+//            // Store results in a list.
+//            List<ScanResult> scanResults = wifiManager.getScanResults();
+//            checkIfEmpty(scanResults);
+//            for (ScanResult scanResult : scanResults) {
+//                scannedAPs.addElement(scanResult.BSSID);
+//            }
+//        }
+//
+////        PREPARING THE DISTANCE VECTOR PHASE
+//        for (String scan : scannedAPs) {
+////            For every cell
+//            int pointer = 0;
+//            for (int i = 0; i < 4; i++) {
+////                For every measurement
+//                for (int j = pointer; j < pointer + measurements_num[i]; j++) {
+//                    if (!db.checkAPExists(scan, table_names[i])) {
+//                        distance_sum[j]++;
+//                    } else if (db.isNull(scan, table_names[i], ("M" + (j - pointer)))) {
+//                        distance_sum[j]++;
+//                    }
+//                }
+//                pointer = pointer + measurements_num[i];
+//            }
+//        }
+////        Passing the sums through a root would give us the euclidean distance but since we have either 0 or 1, it is redundant.
+//
+////        DETERMINING THE OUTPUT RESULT PHASE
+//        int[] id_table = new int[total_measurements];
+//        for (int i = 0; i < total_measurements; i++) {
+//            if (i < measurements_num[0]) {
+//                id_table[i] = 0;
+//            } else if (i < (measurements_num[0] + measurements_num[1])) {
+//                id_table[i] = 1;
+//            } else if (i < (measurements_num[0] + measurements_num[1] + measurements_num[2])) {
+//                id_table[i] = 2;
+//            } else {
+//                id_table[i] = 3;
+//            }
+//        }
+////        Sort
+//        bubbleSort(distance_sum, id_table);
+//        int[] neighbours_counter = {0, 0, 0, 0};
+//        for (int id : id_table) {
+//            neighbours_counter[id]++;
+//            if (neighbours_counter[id] == K) {
+//                setBrightBlock(id);
+//                break;
+//            }
+//        }
     }
-
-    private boolean runLocationPermissionCheck() {
-        // Set location manager (Location is also necessary)
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            Toast toast = Toast.makeText(getApplicationContext(), "Location Service is required for this action!", Toast.LENGTH_LONG);
-            toast.show();
-            Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(myIntent);
-        }
-        return true;
-    }
-
 }
 
