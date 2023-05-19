@@ -41,6 +41,7 @@ import android.hardware.SensorManager;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
     private static final int CELLS_NUM = 20;
+    private float[] prior = new float[CELLS_NUM];;
     DatabaseClass db;
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -175,6 +176,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             // No gyroscope!
         }
+
+        Arrays.fill(prior, 1/CELLS_NUM);
     }
 
     @Override
@@ -442,11 +445,72 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 //        3) Normalize histogram so that all values in each row is equal to one
-//        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
-//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
-//        5) Iterate until stop
-//        6) Choose cell with max posterior
+        for (int i=0;i<scannedAPs.size();i++){
+            for (int j=0;j<CELLS_NUM;j++){
+                int sum = 0;
+                for (int k=0;k<histogram_slices;k++){
+                    sum += histograms[i][j][k];
+                }
+                for (int k=0;k<histogram_slices;k++){
+                    histograms[i][j][k] = histograms[i][j][k]/sum;
+                }
+            }
+        }
 
+//        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
+        for (int i = 0; i < scannedAPs.size(); i++) {
+            int mat[][] = new int[CELLS_NUM][histogram_slices];
+            // copy data from histograms[i] to mat
+            for (int j = 0; j < CELLS_NUM; j++) {
+                for (int k = 0; k < histogram_slices; k++) {
+                    mat[j][k] = histograms[i][j][k];
+                }
+            }
+            // Max of each row : Currently using max as the mean of the histogram
+            int max[] = new int[CELLS_NUM];
+            // Intialize max to -100
+            Arrays.fill(max, -100);
+
+            for(int j = 0; j < CELLS_NUM; j++) {
+                for(int k = 0; k < histogram_slices; k++) {
+                    if(mat[j][k] > max[j]) {
+                        max[j] = mat[j][k];
+                    }
+                }
+            }
+            // Find the normalization factor
+            int normalization_factor[] = new int[CELLS_NUM];
+            for(int j = 0; j < CELLS_NUM; j++){
+                    normalization_factor[j] += max[j]*prior[j];
+            }
+            // Find the posterior
+            for (int j = 0; j < CELLS_NUM; j++) {
+                prior[j] = max[j]*prior[j]/normalization_factor[j];
+            }
+
+        }
+       
+        // Max of prior
+        float max_prior = 0;
+        int max_index = 0;
+        for(int i = 0; i < CELLS_NUM; i++) {
+            if(prior[i] > max_prior) {
+                max_prior = prior[i];
+                max_index = i;
+            }
+        }
+         //  5) Iterate until stop condition is met
+        if (max_prior > 0.95) {
+            // goto 3 again
+        }
+        else {
+
+        }
+
+//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
+
+//        6) Choose cell with max posterior
+          // Max index is the cell number
     }
 }
 
