@@ -367,25 +367,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-    private static void bubbleSort(int[] ap, int[] id) {
-        boolean sorted = false;
-        int temp;
-        int temp2;
-        while (!sorted) {
-            sorted = true;
-            for (int i = 0; i < ap.length - 1; i++) {
-                if (ap[i] > ap[i + 1]) {
-                    temp = ap[i];
-                    ap[i] = ap[i + 1];
-                    ap[i + 1] = temp;
-                    temp2 = id[i];
-                    id[i] = id[i + 1];
-                    id[i + 1] = temp2;
-                    sorted = false;
-                }
-            }
-        }
-    }
+//    private static void bubbleSort(int[] ap, int[] id) {
+//        boolean sorted = false;
+//        int temp;
+//        int temp2;
+//        while (!sorted) {
+//            sorted = true;
+//            for (int i = 0; i < ap.length - 1; i++) {
+//                if (ap[i] > ap[i + 1]) {
+//                    temp = ap[i];
+//                    ap[i] = ap[i + 1];
+//                    ap[i + 1] = temp;
+//                    temp2 = id[i];
+//                    id[i] = id[i + 1];
+//                    id[i + 1] = temp2;
+//                    sorted = false;
+//                }
+//            }
+//        }
+//    }
 
     private void applyBayesian() {
         int H = 5;
@@ -441,75 +441,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 
-
 //        3) Normalize histogram so that all values in each row is equal to one
 //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
 //        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
 //        5) Iterate until stop
 //        6) Choose cell with max posterior
 
-
-
-//        String[] table_names = {"C1", "C2", "C3", "C4"};
-//        Vector<String> scannedAPs = new Vector<String>();
-//        int[] distance_sum = new int[total_measurements];
-//        Arrays.fill(distance_sum, 0);
-//
-////        SCAN CURRENT WIFI PHASE
-//        if (runLocationPermissionCheck()) {
-//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                makeToast("Permission for WiFi scan not granted");
-//                return;
-//            }
-//            // Store results in a list.
-//            List<ScanResult> scanResults = wifiManager.getScanResults();
-//            checkIfEmpty(scanResults);
-//            for (ScanResult scanResult : scanResults) {
-//                scannedAPs.addElement(scanResult.BSSID);
-//            }
-//        }
-//
-////        PREPARING THE DISTANCE VECTOR PHASE
-//        for (String scan : scannedAPs) {
-////            For every cell
-//            int pointer = 0;
-//            for (int i = 0; i < 4; i++) {
-////                For every measurement
-//                for (int j = pointer; j < pointer + measurements_num[i]; j++) {
-//                    if (!db.checkAPExists(scan, table_names[i])) {
-//                        distance_sum[j]++;
-//                    } else if (db.isNull(scan, table_names[i], ("M" + (j - pointer)))) {
-//                        distance_sum[j]++;
-//                    }
-//                }
-//                pointer = pointer + measurements_num[i];
-//            }
-//        }
-////        Passing the sums through a root would give us the euclidean distance but since we have either 0 or 1, it is redundant.
-//
-////        DETERMINING THE OUTPUT RESULT PHASE
-//        int[] id_table = new int[total_measurements];
-//        for (int i = 0; i < total_measurements; i++) {
-//            if (i < measurements_num[0]) {
-//                id_table[i] = 0;
-//            } else if (i < (measurements_num[0] + measurements_num[1])) {
-//                id_table[i] = 1;
-//            } else if (i < (measurements_num[0] + measurements_num[1] + measurements_num[2])) {
-//                id_table[i] = 2;
-//            } else {
-//                id_table[i] = 3;
-//            }
-//        }
-////        Sort
-//        bubbleSort(distance_sum, id_table);
-//        int[] neighbours_counter = {0, 0, 0, 0};
-//        for (int id : id_table) {
-//            neighbours_counter[id]++;
-//            if (neighbours_counter[id] == K) {
-//                setBrightBlock(id);
-//                break;
-//            }
-//        }
     }
 }
 
