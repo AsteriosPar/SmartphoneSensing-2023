@@ -413,7 +413,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 //        2) Make histogram of the training data (1 table per access point)
-        int[][][] histograms = new int[scannedAPs.size()][CELLS_NUM][100/H];
+//        NOTE: The k variable indicates the different H slots, not the measurement values
+//                      _ _
+//                    _| | |
+//                   | | | |_
+//            _______| | | | |_______
+//          0         h h h h        -100
+
+        int histogram_slices = 100/H;
+        int[][][] histograms = new int[scannedAPs.size()][CELLS_NUM][histogram_slices];
+        Arrays.fill(histograms, 0);
+
+        for (int i=0;i<scannedAPs.size();i++){
+            for (int j=0;j<CELLS_NUM;j++){
+                if (db.checkAPExists(scannedAPs.get(i), "C"+(j+1))){
+                    for (int k=0;k<measurements_num[j];k++){
+                        int value = db.getData(scannedAPs.get(i), "C"+(j+1), "M"+(k+1));
+//                        We get '1' in case the value is NULL
+//                        We can never measure a signal with less than -100db but added the check for safety
+                        if (0>value && value>-100) {
+                            int hist_index = -value/H;
+                            histograms[i][j][hist_index]++;
+                        }
+                    }
+                }
+            }
+        }
 
 
 

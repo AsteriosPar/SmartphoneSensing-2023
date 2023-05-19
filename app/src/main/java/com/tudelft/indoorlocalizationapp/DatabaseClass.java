@@ -74,6 +74,17 @@ public class DatabaseClass extends SQLiteOpenHelper {
         return true;
     }
 
+    public int getData(String ar, String cell, String measurement){
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + measurement + " FROM " + cell + " WHERE " + AP + " = '" + ar + "'", null);
+        if (cursor != null && cursor.moveToFirst()) {
+            if (!cursor.isNull(0)){
+                return cursor.getInt(0);
+            }
+        }
+        return 1;
+    }
+
 //    Checks if a value in a table is null value
     public boolean isNull(String access_point, String cell, String measurement) {
         SQLiteDatabase db = this.getWritableDatabase();
