@@ -437,6 +437,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     }
                 }
+//              TODO: Add a function that fills potential zero probability gaps.
+
+//                      _   _
+//                    _| | | |
+//                   | | | | |_
+//            _______| | |_| | |_______
+//          0           problem!       -100
+
             }
         }
 
