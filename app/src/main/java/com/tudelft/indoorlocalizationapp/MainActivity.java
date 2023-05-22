@@ -457,7 +457,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-//        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
+
+        // Max of prior
+        float max_prior = 0;
+        int max_index = 0;
+
+         //  5) Iterate until stop condition is met
+        while (!(max_prior > 0.95)) {
+            for(int i = 0; i < CELLS_NUM; i++) {
+                if(prior[i] > max_prior) {
+                    max_prior = prior[i];
+                    max_index = i;
+                }
+            }
+            posterior_calculation(histograms,histogram_slices,scannedAPs);
+        }
+
+
+//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
+
+//        6) Choose cell with max posterior
+          // Max index is the cell number
+    }
+
+    private void posterior_calculation(int[][][] histograms,int histogram_slices,Vector<String> scannedAPs){
+
+        //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
         for (int i = 0; i < scannedAPs.size(); i++) {
             int mat[][] = new int[CELLS_NUM][histogram_slices];
             // copy data from histograms[i] to mat
@@ -479,38 +504,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
             // Find the normalization factor
-            int normalization_factor[] = new int[CELLS_NUM];
+            int normalization_factor = 0;
             for(int j = 0; j < CELLS_NUM; j++){
-                    normalization_factor[j] += max[j]*prior[j];
+                normalization_factor += max[j]*prior[j];
             }
             // Find the posterior
             for (int j = 0; j < CELLS_NUM; j++) {
-                prior[j] = max[j]*prior[j]/normalization_factor[j];
+                prior[j] = max[j]*prior[j]/normalization_factor;
             }
 
         }
-       
-        // Max of prior
-        float max_prior = 0;
-        int max_index = 0;
-        for(int i = 0; i < CELLS_NUM; i++) {
-            if(prior[i] > max_prior) {
-                max_prior = prior[i];
-                max_index = i;
-            }
-        }
-         //  5) Iterate until stop condition is met
-        if (max_prior > 0.95) {
-            // goto 3 again
-        }
-        else {
 
-        }
-
-//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
-
-//        6) Choose cell with max posterior
-          // Max index is the cell number
     }
 }
 
