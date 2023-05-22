@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 public class DatabaseClass extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "Bayesian_Database";
+    private static final String DATABASE_NAME = "KNN_Database";
     private static final String AP = "access_points";
 
     public DatabaseClass(Context context) {
@@ -17,48 +17,33 @@ public class DatabaseClass extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        //        Add table that stores the measurements of each cell
-        db.execSQL("CREATE TABLE MEASUREMENTS (ID INTEGER PRIMARY KEY AUTOINCREMENT, NAME TEXT, COLUMNS INTEGER)");
-
-        for (int i = 1; i < 21; i++) {
-            String query = "CREATE TABLE C" + i + " (ID INTEGER PRIMARY KEY AUTOINCREMENT," + AP + " TEXT";
-            for (int j = 1; j < 41; j++) {
-                query += ", M" + j + " INTEGER";
-            }
-            query += ")";
-            db.execSQL(query);
-
-            ContentValues contentValues = new ContentValues();
-            contentValues.put("NAME", "C"+i);
-            contentValues.put("COLUMNS", 0);
-            db.insert("MEASUREMENTS", null, contentValues);
-        }
+        db.execSQL("CREATE TABLE C1 (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT, M0 INTEGER, M1 INTEGER, M2 INTEGER, M3 INTEGER, M4 INTEGER, M5 INTEGER, M6 INTEGER, M7 INTEGER, M8 INTEGER, M9 INTEGER)");
+        db.execSQL("CREATE TABLE C2 (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT, M0 INTEGER, M1 INTEGER, M2 INTEGER, M3 INTEGER, M4 INTEGER, M5 INTEGER, M6 INTEGER, M7 INTEGER, M8 INTEGER, M9 INTEGER)");
+        db.execSQL("CREATE TABLE C3 (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT, M0 INTEGER, M1 INTEGER, M2 INTEGER, M3 INTEGER, M4 INTEGER, M5 INTEGER, M6 INTEGER, M7 INTEGER, M8 INTEGER, M9 INTEGER)");
+        db.execSQL("CREATE TABLE C4 (ID INTEGER PRIMARY KEY AUTOINCREMENT, " + AP + " TEXT, M0 INTEGER, M1 INTEGER, M2 INTEGER, M3 INTEGER, M4 INTEGER, M5 INTEGER, M6 INTEGER, M7 INTEGER, M8 INTEGER, M9 INTEGER)");
     }
+
     @Override
     public void onUpgrade(SQLiteDatabase db, int i, int i1) {
-        for (int j = 1; j < 21; j++) {
-            db.execSQL("DROP TABLE IF EXISTS C" + j);
-        }
+        db.execSQL("DROP TABLE IF EXISTS C1");
+        db.execSQL("DROP TABLE IF EXISTS C2");
+        db.execSQL("DROP TABLE IF EXISTS C3");
+        db.execSQL("DROP TABLE IF EXISTS C4");
         onCreate(db);
     }
-    public void deleteAllData() {
-        SQLiteDatabase db = this.getWritableDatabase();
-        for (int j = 17; j < 21; j++) {
-            db.execSQL("DELETE FROM C" + j);
-            String query = "UPDATE MEASUREMENTS SET COLUMNS = '0' WHERE NAME = 'C" + j + "'";
-            db.execSQL(query);
-        }
-    }
-
-//    Parses all the measurements in a cell to find a specific AP
     public boolean checkAPExists(String access_point, String cell) {
+        boolean nameExists = false;
+
         SQLiteDatabase db = this.getReadableDatabase();
         String st = "select * from " + cell + " where " + AP + " = '" + access_point + "'";
         Cursor data = db.rawQuery(st, null);
-        return data.moveToNext();
+        if(data.moveToNext())
+        {
+            nameExists = true;
+        }
+        return nameExists;
     }
 
-//    Adds AP id (if it does not exist) and RSS signal values to chosen measurement
     public boolean addData(String ar, int signal_strength, String cell, String cur_column) {
         SQLiteDatabase db = this.getWritableDatabase();
         if (!checkAPExists(ar, cell)) {
@@ -67,65 +52,33 @@ public class DatabaseClass extends SQLiteOpenHelper {
             contentValues.put(cur_column, signal_strength);
             long result = db.insert(cell, null, contentValues);
             return result != -1;
-        } else {
+        }
+        else {
             String query = "UPDATE " + cell + " SET " + cur_column + " = '" + signal_strength + "' WHERE " + AP + " = '" + ar + "'";
             db.execSQL(query);
         }
         return true;
     }
-
-    public int getData(String ar, String cell, String measurement){
+    public void deleteAllData(){
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery("SELECT " + measurement + " FROM " + cell + " WHERE " + AP + " = '" + ar + "'", null);
-        if (cursor != null && cursor.moveToFirst()) {
-            if (!cursor.isNull(0)){
-                return cursor.getInt(0);
-            }
-        }
-        return 1;
+        db.execSQL("DELETE FROM C1");
+        db.execSQL("DELETE FROM C2");
+        db.execSQL("DELETE FROM C3");
+        db.execSQL("DELETE FROM C4");
     }
 
-//    Checks if a value in a table is null value
+    public void deleteData(String cell){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM "+ cell);
+    }
+
     public boolean isNull(String access_point, String cell, String measurement) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + measurement + " FROM " + cell + " WHERE " + AP + " = '" + access_point + "'", null);
+
         if (cursor != null && cursor.moveToFirst()) {
             return cursor.isNull(0);
         }
         return false;
     }
-
-//    Returns the number of measurements made in a cell. If none, it returns 0.
-    public int getPopulatedColumns(String cell){
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery("SELECT COLUMNS FROM MEASUREMENTS WHERE NAME = '" + cell + "'", null);
-        if (cursor != null && cursor.moveToFirst()) {
-            if (!cursor.isNull(0)){
-                return cursor.getInt(0);
-            }
-        }
-        return 0;
-    }
-
-    public void increaseColumnCount(String cell){
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.rawQuery("SELECT COLUMNS FROM MEASUREMENTS WHERE NAME = '" + cell + "'", null);
-        if (cursor != null && cursor.moveToFirst()) {
-            if (!cursor.isNull(0)){
-                int index = cursor.getInt(0) + 1;
-                if (index<40){
-                    String query = "UPDATE MEASUREMENTS SET COLUMNS = '" + index + "' WHERE NAME = '" + cell + "'";
-                    db.execSQL(query);
-                }
-            }
-            else {
-                String query = "UPDATE MEASUREMENTS SET COLUMNS = '1' WHERE NAME = '" + cell + "'";
-                db.execSQL(query);
-            }
-        }
-    }
-
-
-
-
 }
