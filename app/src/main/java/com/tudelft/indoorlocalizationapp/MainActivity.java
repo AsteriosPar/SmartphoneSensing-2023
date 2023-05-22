@@ -41,6 +41,7 @@ import android.hardware.SensorManager;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
     private static final int CELLS_NUM = 20;
+    private static final int H = 5;
     private float[] prior = new float[CELLS_NUM];;
     DatabaseClass db;
     private SensorManager sensorManager;
@@ -391,7 +392,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //    }
 
     private void applyBayesian() {
-        int H = 5;
         int[] measurements_num = new int[CELLS_NUM];
         int total_measurements = 0;
         for (int i=0;i<CELLS_NUM;i++){
@@ -438,6 +438,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             int hist_index = -value/H;
                             histograms[i][j][hist_index]++;
                         }
+                    }
+                }
+//                Here we want to fill gaps in the histogram to avoid 0 probability close to hot spots.
+//                      _   _
+//                    _| | | |
+//                   | | | | |_
+//            _______| | |_| | |_______
+//          0           problem!       -100
+
+                for (int k=1;k<histogram_slices-1;k++){
+                    if (histograms[i][j][k]>2){
+                        histograms[i][j][k]=-2;
+                        histograms[i][j][k-1]++;
+                        histograms[i][j][k+1]++;
                     }
                 }
             }
