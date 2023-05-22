@@ -40,10 +40,13 @@ import java.util.List;
 public class TrainActivity extends AppCompatActivity implements View.OnClickListener {
     private ListView txt_train;
     private WifiManager wifiManager;
+    private SharedPreferences mPreferences;
+    private SharedPreferences.Editor mEditor;
     ArrayList<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
     DatabaseClass DBClass;
     int new_samples=0;
+
 
     String cell;
     BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
@@ -64,14 +67,20 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         setContentView(R.layout.activity_train);
         Intent intent = getIntent();
         cell = intent.getStringExtra("key");
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mEditor = mPreferences.edit();
+
+        new_samples = getSamples();
+        updateSamplesView(new_samples);
+
+        // Initialize Local Database
         DBClass = new DatabaseClass(this);
 
-        updateSamplesView(DBClass.getPopulatedColumns(cell));
-
         Button btn_train = (Button) findViewById(R.id.btn_train);
-        btn_train.setOnClickListener(this);
+//        Button btn_back = (Button) findViewById(R.id.btn_back);
         txt_train = (ListView) findViewById(R.id.text_train);
         TextView txt_train_title = findViewById(R.id.text_train_title);
+
 
         // Set Title with the appropriate cell name.
         txt_train_title.setText("Go to location " + cell + " and press <Scan> to detect WIFI signal");
@@ -81,6 +90,10 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
                 android.R.layout.simple_list_item_1,
                 listItems);
         txt_train.setAdapter(adapter);
+
+        // Connect button to listener
+        btn_train.setOnClickListener(this);
+//        btn_back.setOnClickListener(this);
     }
 
     @Override
@@ -95,53 +108,6 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
-    }
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.btn_train) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
-                toast.show();
-                return;
-            }
-            // Set wifi manager.
-            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            boolean success = wifiManager.startScan();
-            if (!success) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
-                toast.show();
-            }
-        }
-    }
-
-    public void scanSuccess(){
-        // Check if WiFi permission is granted
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
-            toast.show();
-            return;
-        }
-        if (runLocationPermissionCheck()) {
-            // Store results in a list.
-            List<ScanResult> scanResults = wifiManager.getScanResults();
-            checkIfEmpty(scanResults);
-
-            adapter.clear();
-            int cur_measurement = DBClass.getPopulatedColumns(cell)+1;
-            for (ScanResult scanResult : scanResults) {
-                String str = "\n\tBSSID = " + scanResult.BSSID + "\n\tRSSI = " + scanResult.level + "dBm";
-                // Print results
-                adapter.add(str);
-                // Save results in database
-                boolean apAdded = DBClass.addData(scanResult.BSSID, scanResult.level, cell, ("M"+cur_measurement));
-                if (!apAdded) {
-                    Toast toast = Toast.makeText(getApplicationContext(), "Problem writing in database", Toast.LENGTH_SHORT);
-                    toast.show();
-                }
-            }
-            DBClass.increaseColumnCount(cell);
-            updateSamplesView(DBClass.getPopulatedColumns(cell));
-        }
     }
 
     public void checkIfEmpty(List<ScanResult> scanResults) {
@@ -165,10 +131,95 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
         }
         return true;
     }
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.btn_train) {
+            // Set wifi manager.
+            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            boolean success = wifiManager.startScan();
+            if (!success) {
+                Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        }
+//        else {
+//            finish();
+//        }
+    }
 
+    public void scanSuccess(){
+        // Check if WiFi permission is granted
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Toast toast = Toast.makeText(getApplicationContext(), "Permission for WiFi scan not granted", Toast.LENGTH_SHORT);
+            toast.show();
+            return;
+        }
+        if (runLocationPermissionCheck()) {
+            // Store results in a list.
+            List<ScanResult> scanResults = wifiManager.getScanResults();
+            checkIfEmpty(scanResults);
+            // Write results to a label
+            adapter.clear();
+            for (ScanResult scanResult : scanResults) {
+                String str = "\n\tBSSID = " + scanResult.BSSID + "\n\tRSSI = " + scanResult.level + "dBm";
+                // Print results
+                adapter.add(str);
+                // Save results in database
+                boolean apAdded = DBClass.addData(scanResult.BSSID, scanResult.level, cell, ("M"+new_samples));
+                if (!apAdded) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Problem writing in database", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
+            }
+            new_samples = increaseSampleNum(new_samples);
+        }
+    }
+
+    int getSamples(){
+        switch (cell){
+            case "C1":
+                return mPreferences.getInt("c1_samples", 0);
+            case "C2":
+                return mPreferences.getInt("c2_samples", 0);
+            case "C3":
+                return mPreferences.getInt("c3_samples", 0);
+            case "C4":
+                return mPreferences.getInt("c4_samples", 0);
+            default:
+                return 0;
+        }
+    }
     void updateSamplesView(int samples){
         // Update the samples counter text
         TextView txt_count = findViewById(R.id.text_counter);
         txt_count.setText("Measurements: " + samples);
+    }
+    void updateSampleNum(int samples){
+        switch (cell){
+            case "C1":
+                mEditor.putInt("c1_samples", samples);
+                break;
+            case "C2":
+                mEditor.putInt("c2_samples", samples);
+                break;
+            case "C3":
+                mEditor.putInt("c3_samples", samples);
+                break;
+            default:
+                mEditor.putInt("c4_samples", samples);
+        }
+        mEditor.apply();
+        updateSamplesView(samples);
+    }
+    int increaseSampleNum(int samples) {
+        if ((samples+1) > 9) {
+            samples = 9;
+            Toast.makeText(getApplicationContext(), "Reached maximum number of scan measurements", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            samples++;
+            updateSampleNum(samples);
+        }
+        return samples;
     }
 }
