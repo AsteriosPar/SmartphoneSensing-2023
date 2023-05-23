@@ -1,6 +1,5 @@
 package com.tudelft.indoorlocalizationapp;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,7 +11,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.LocationManager;
@@ -20,7 +18,6 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
@@ -30,7 +27,6 @@ import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import java.util.Vector;
 
 import android.hardware.Sensor;
@@ -484,7 +480,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     max_index = i;
                 }
             }
-            posterior_calculation(histograms,histogram_slices,scannedAPs);
+            posterior_calculation(histograms,histogram_slices,scannedAPs,scannedRSSs);
         }
 
 
@@ -494,7 +490,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
           // Max index is the cell number
     }
 
-    private void posterior_calculation(int[][][] histograms,int histogram_slices,Vector<String> scannedAPs){
+    private void posterior_calculation(int[][][] histograms, int histogram_slices, Vector<String> scannedAPs, Vector<Integer> scannedRSSs){
 
         //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
         for (int i = 0; i < scannedAPs.size(); i++) {
@@ -510,12 +506,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // Intialize max to -100
             Arrays.fill(max, -100);
 
+            int element = scannedRSSs.get(i)/histogram_slices;
+
             for(int j = 0; j < CELLS_NUM; j++) {
-                for(int k = 0; k < histogram_slices; k++) {
-                    if(mat[j][k] > max[j]) {
-                        max[j] = mat[j][k];
-                    }
-                }
+                max[j] = mat[j][element];
             }
             // Find the normalization factor
             int normalization_factor = 0;
