@@ -1,5 +1,6 @@
 package com.tudelft.indoorlocalizationapp;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +12,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.LocationManager;
@@ -18,6 +20,7 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
@@ -27,6 +30,7 @@ import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Vector;
 import java.util.Vector;
 
 import android.hardware.Sensor;
@@ -38,7 +42,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final int CELLS_NUM = 20;
     private static final int H = 5;
-    private float[] prior = new float[CELLS_NUM];;
     DatabaseClass db;
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -55,6 +58,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int counter = 0;
     private TextView act;
     KNN knn = new KNN();
+    private float[] prior = new float[CELLS_NUM];
+
 
     double[][] jumping = {
             {5.772805407, 1.491408525},
@@ -173,8 +178,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             // No gyroscope!
         }
-
-        Arrays.fill(prior, 1/CELLS_NUM);
     }
 
     @Override
@@ -367,35 +370,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-//    private static void bubbleSort(int[] ap, int[] id) {
-//        boolean sorted = false;
-//        int temp;
-//        int temp2;
-//        while (!sorted) {
-//            sorted = true;
-//            for (int i = 0; i < ap.length - 1; i++) {
-//                if (ap[i] > ap[i + 1]) {
-//                    temp = ap[i];
-//                    ap[i] = ap[i + 1];
-//                    ap[i + 1] = temp;
-//                    temp2 = id[i];
-//                    id[i] = id[i + 1];
-//                    id[i + 1] = temp2;
-//                    sorted = false;
-//                }
-//            }
-//        }
-//    }
-
     private void applyBayesian() {
         int[] measurements_num = new int[CELLS_NUM];
         int total_measurements = 0;
-        for (int i=0;i<CELLS_NUM;i++){
-            measurements_num[i] = db.getPopulatedColumns("C"+(i+1));
+        for (int i = 0; i < CELLS_NUM; i++) {
+            measurements_num[i] = db.getPopulatedColumns("C" + (i + 1));
             total_measurements += measurements_num[i];
         }
         Vector<String> scannedAPs = new Vector<String>();
         Vector<Integer> scannedRSSs = new Vector<Integer>();
+//        We should renew the prior everytime we press the button
+        Arrays.fill(prior, 1.0f/CELLS_NUM);
 
 //        1) Gather data
 
@@ -419,9 +404,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //            _______| | | | |_______
 //          0         h h h h        -100
 
-        int histogram_slices = 100/H;
-        int[][][] histograms = new int[scannedAPs.size()][CELLS_NUM][histogram_slices];
-        Arrays.fill(histograms, 0);
+        int histogram_slices = 100 / H;
+        float[][][] histograms = new float[scannedAPs.size()][CELLS_NUM][histogram_slices];
+        float zero = 0;
+        for (float[][] histogram : histograms) {
+            for (float[] floats : histogram) {
+                Arrays.fill(floats, zero);
+            }
+        }
 
         for (int i=0;i<scannedAPs.size();i++){
             for (int j=0;j<CELLS_NUM;j++){
@@ -452,7 +442,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
-
+//        makeToast("histograms populated and smoothened");
 
 //        3) Normalize histogram so that all values in each row is equal to one
         for (int i=0;i<scannedAPs.size();i++){
@@ -466,22 +456,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
+//        makeToast("histograms normalized");
 
-
-        // Max of prior
         float max_prior = 0;
         int max_index = 0;
+         //  5) Iterate through Access points until stop condition is met
+        for(int apIndex=0; apIndex<scannedAPs.size(); apIndex++){
+            if ((max_prior > 0.95)) {
+                setBrightBlock(max_index);
+                break;
+            }
+            // Run the posterior probability calculation
+            posterior_calculation(histograms, scannedRSSs, apIndex);
 
-         //  5) Iterate until stop condition is met
-        while (!(max_prior > 0.95)) {
-            for(int i = 0; i < CELLS_NUM; i++) {
-                if(prior[i] > max_prior) {
-                    max_prior = prior[i];
-                    max_index = i;
+            // Max of prior
+            max_prior = 0;
+            max_index = 0;
+            for (int j=0; j<CELLS_NUM; j++) {
+                if (prior[j] > max_prior) {
+                    max_prior = prior[j];
+                    max_index = j;
                 }
             }
-            posterior_calculation(histograms,histogram_slices,scannedAPs,scannedRSSs);
         }
+
+//        makeToast("Cell: " + (max_index+1));
+//        makeToast("Completed");
 
 
 //        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
@@ -490,39 +490,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
           // Max index is the cell number
     }
 
-    private void posterior_calculation(int[][][] histograms, int histogram_slices, Vector<String> scannedAPs, Vector<Integer> scannedRSSs){
+    private void posterior_calculation(float[][][] histograms, Vector<Integer> scannedRSSs, int i){
+//        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
+//        Max of each row : Currently using max as the mean of the histogram
+        float[] conditionalProbability = new float[CELLS_NUM];
+        int element = -scannedRSSs.get(i)/H;
 
-        //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
-        for (int i = 0; i < scannedAPs.size(); i++) {
-            int mat[][] = new int[CELLS_NUM][histogram_slices];
-            // copy data from histograms[i] to mat
-            for (int j = 0; j < CELLS_NUM; j++) {
-                for (int k = 0; k < histogram_slices; k++) {
-                    mat[j][k] = histograms[i][j][k];
-                }
-            }
-            // Max of each row : Currently using max as the mean of the histogram
-            int max[] = new int[CELLS_NUM];
-            // Intialize max to -100
-            Arrays.fill(max, -100);
-
-            int element = scannedRSSs.get(i)/histogram_slices;
-
-            for(int j = 0; j < CELLS_NUM; j++) {
-                max[j] = mat[j][element];
-            }
-            // Find the normalization factor
-            int normalization_factor = 0;
-            for(int j = 0; j < CELLS_NUM; j++){
-                normalization_factor += max[j]*prior[j];
-            }
-            // Find the posterior
-            for (int j = 0; j < CELLS_NUM; j++) {
-                prior[j] = max[j]*prior[j]/normalization_factor;
-            }
-
+        // Find the conditional probability and the normalization factor
+        int normalization_factor = 0;
+        for(int j = 0; j < CELLS_NUM; j++){
+            conditionalProbability[j] = histograms[i][j][element];
+            normalization_factor += conditionalProbability[j]*prior[j];
         }
-
+        // Find the posterior
+        for (int j = 0; j < CELLS_NUM; j++) {
+            prior[j] = conditionalProbability[j]*prior[j]/normalization_factor;
+        }
     }
 }
 
