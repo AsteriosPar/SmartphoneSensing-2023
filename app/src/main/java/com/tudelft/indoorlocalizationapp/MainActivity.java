@@ -41,7 +41,7 @@ import android.hardware.SensorManager;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
     private static final int CELLS_NUM = 20;
-    private static final int H = 5;
+    private static final int H = 3;
     DatabaseClass db;
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -114,7 +114,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             {0.125951807, 0.009910315},
             {0.06537188, 0.089638729}
     };
-
     private WifiManager wifiManager;
     BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
         @RequiresApi(api = Build.VERSION_CODES.M)
@@ -194,7 +193,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         getApplicationContext().registerReceiver(wifiScanReceiver, intentFilter);
-
         sensorManager.registerListener(this, accelerometer,
                 SensorManager.SENSOR_DELAY_UI);
         sensorManager.registerListener(this, gyroscope,
@@ -358,9 +356,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private boolean runLocationPermissionCheck() {
-        // Set location manager (Location is also necessary)
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             Toast toast = Toast.makeText(getApplicationContext(), "Location Service is required for this action!", Toast.LENGTH_LONG);
             toast.show();
@@ -383,7 +379,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Arrays.fill(prior, 1.0f/CELLS_NUM);
 
 //        1) Gather data
-
         if (runLocationPermissionCheck()) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 makeToast("Permission for WiFi scan not granted");
@@ -460,12 +455,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         float max_prior = 0;
         int max_index = 0;
+        boolean isConverged = false;
          //  5) Iterate through Access points until stop condition is met
         for(int apIndex=0; apIndex<scannedAPs.size(); apIndex++){
             if ((max_prior > 0.95)) {
                 setBrightBlock(max_index);
+                isConverged = true;
                 break;
             }
+//            TODO: Place a second condition
             // Run the posterior probability calculation
             posterior_calculation(histograms, scannedRSSs, apIndex);
 
@@ -479,15 +477,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
-
-//        makeToast("Cell: " + (max_index+1));
-//        makeToast("Completed");
-
-
-//        4) Choose one of serial or parallel approach (Serial = old posterior -> new prior) (Parallel = all together with uniform prior)
-
-//        6) Choose cell with max posterior
-          // Max index is the cell number
+        if (!isConverged){
+            makeToast("Not converged");
+            setBrightBlock(max_index);
+        }
     }
 
     private void posterior_calculation(float[][][] histograms, Vector<Integer> scannedRSSs, int i){
