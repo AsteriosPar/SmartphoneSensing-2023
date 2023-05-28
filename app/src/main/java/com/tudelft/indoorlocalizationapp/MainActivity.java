@@ -59,8 +59,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView act;
     KNN knn = new KNN();
     private float[] prior = new float[CELLS_NUM];
-
-
     double[][] jumping = {
             {5.772805407, 1.491408525},
             {15.29048816, 2.304816965},
@@ -144,6 +142,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_start.setOnClickListener(this);
         ImageView btn_delete = findViewById(R.id.btn_delete);
         btn_delete.setOnClickListener(this);
+        ImageView btn_uni = findViewById(R.id.btn_uni);
+        btn_uni.setOnClickListener(this);
         act = (TextView) findViewById(R.id.activity_value);
 
         db = new DatabaseClass(this);
@@ -183,7 +183,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onPause() {
         super.onPause();
         getApplicationContext().unregisterReceiver(wifiScanReceiver);
-
         sensorManager.unregisterListener(this);
     }
 
@@ -314,7 +313,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                     })
                     .setNegativeButton(android.R.string.no, null).show();
-        } else {
+        }
+        else if (v.getId() == R.id.btn_uni) {
+            makeToast("The first 16 cells are reserved for indoor localization in TU Delft Building 28 (2nd floor)");
+        }
+        else {
             String cell = ((TextView) v).getText().toString();
             Intent train = new Intent(MainActivity.this, TrainActivity.class);
             train.putExtra("key", cell); //Optional parameters
@@ -464,10 +467,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             }
 //            TODO: Place a second condition
-            // Run the posterior probability calculation
+//            Run the posterior probability calculation
             posterior_calculation(histograms, scannedRSSs, apIndex);
 
-            // Max of prior
+//             Max of prior
             max_prior = 0;
             max_index = 0;
             for (int j=0; j<CELLS_NUM; j++) {
