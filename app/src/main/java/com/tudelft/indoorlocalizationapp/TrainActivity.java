@@ -104,12 +104,14 @@ public class TrainActivity extends AppCompatActivity implements View.OnClickList
                 toast.show();
                 return;
             }
-            // Set wifi manager.
-            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            boolean success = wifiManager.startScan();
-            if (!success) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
-                toast.show();
+            if (runLocationPermissionCheck()) {
+                // Set wifi manager.
+                wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                boolean success = wifiManager.startScan();
+                if (!success) {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Wifi Scan is not ready yet...", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
             }
         }
     }
