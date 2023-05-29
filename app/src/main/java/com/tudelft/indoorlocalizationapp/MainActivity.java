@@ -404,6 +404,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         int histogram_slices = 100 / H;
         float[][][] histograms = new float[scannedAPs.size()][CELLS_NUM][histogram_slices];
+        double[][][] norm_dist = new double[scannedAPs.size()][CELLS_NUM][2];
         float zero = 0;
         for (float[][] histogram : histograms) {
             for (float[] floats : histogram) {
@@ -413,6 +414,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         for (int i=0;i<scannedAPs.size();i++){
             for (int j=0;j<CELLS_NUM;j++){
+//                Mean of normal distribution
+                int mean = 0;
                 if (db.checkAPExists(scannedAPs.get(i), "C"+(j+1))){
                     for (int k=0;k<measurements_num[j];k++){
                         int value = db.getData(scannedAPs.get(i), "C"+(j+1), "M"+(k+1));
@@ -421,9 +424,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         if (0>value && value>-100) {
                             int hist_index = -value/H;
                             histograms[i][j][hist_index]++;
+//                            calculate the mean for the normal distribution
+                            mean+=value;
                         }
                     }
                 }
+                norm_dist[i][j][0] = mean/measurements_num[j];
+
 //                Here we want to fill gaps in the histogram to avoid 0 probability close to hot spots.
 //                      _   _
 //                    _| | | |
@@ -431,16 +438,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //            _______| | |_| | |_______
 //          0           problem!       -100
 
-                for (int k=1;k<histogram_slices-1;k++){
-                    if (histograms[i][j][k]>2){
-                        histograms[i][j][k]=-2;
-                        histograms[i][j][k-1]++;
-                        histograms[i][j][k+1]++;
-                    }
-                }
+//                for (int k=1;k<histogram_slices-1;k++){
+//                    if (histograms[i][j][k]>2){
+//                        histograms[i][j][k]=-2;
+//                        histograms[i][j][k-1]++;
+//                        histograms[i][j][k+1]++;
+//                    }
+//                }
             }
         }
-//        makeToast("histograms populated and smoothened");
+
+//        3) Prepare Gaussian parameters (std_dev)
+        for (int i=0;i<scannedAPs.size();i++){
+            for (int j=0;j<CELLS_NUM;j++){
+                double dist = 0;
+                if (db.checkAPExists(scannedAPs.get(i), "C"+(j+1))){
+                    for (int k=0;k<measurements_num[j];k++){
+                        int value = db.getData(scannedAPs.get(i), "C"+(j+1), "M"+(k+1));
+                        if (0>value && value>-100) {
+                            dist += Math.pow((value - norm_dist[i][j][0]), 2.0);
+                        }
+                    }
+                }
+                norm_dist[i][j][1] = Math.sqrt((dist/measurements_num[j]));
+            }
+        }
 
 //        3) Normalize histogram so that all values in each row is equal to one
         for (int i=0;i<scannedAPs.size();i++){
@@ -454,12 +476,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         }
-//        makeToast("histograms normalized");
 
+//          4) Iterate through Access points until stop condition is met
         float max_prior = 0;
         int max_index = 0;
         boolean isConverged = false;
-         //  5) Iterate through Access points until stop condition is met
         for(int apIndex=0; apIndex<scannedAPs.size(); apIndex++){
             if ((max_prior > 0.95)) {
                 setBrightBlock(max_index);
@@ -483,6 +504,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (!isConverged){
             makeToast("Not converged");
             setBrightBlock(max_index);
+        }
+    }
+
+    private void fitGaussian(float[][][] histograms, float [][][] norm_dist, int ap_num, int histogram_slices){
+        for (int i=0;i<ap_num;i++) {
+            for (int j = 0; j < CELLS_NUM; j++) {
+//                Find mean value
+                int sum = 0;
+                for (int k = 0; k < histogram_slices; k++) {
+                    sum += histograms[i][j][k];
+                }
+                for (int k = 0; k < histogram_slices; k++) {
+                    histograms[i][j][k] = histograms[i][j][k] / sum;
+                }
+            }
         }
     }
 
