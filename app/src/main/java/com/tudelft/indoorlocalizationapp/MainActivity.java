@@ -1,26 +1,22 @@
 package com.tudelft.indoorlocalizationapp;
 
-import androidx.annotation.IntDef;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
@@ -28,15 +24,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
-import java.util.Vector;
-
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
@@ -58,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int counter = 0;
     private TextView act;
     KNN knn = new KNN();
-    private float[] prior = new float[CELLS_NUM];
+    private double[] prior = new double[CELLS_NUM];
     double[][] jumping = {
             {5.772805407, 1.491408525},
             {15.29048816, 2.304816965},
@@ -430,21 +425,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
                 norm_dist[i][j][0] = mean/measurements_num[j];
-
-//                Here we want to fill gaps in the histogram to avoid 0 probability close to hot spots.
-//                      _   _
-//                    _| | | |
-//                   | | | | |_
-//            _______| | |_| | |_______
-//          0           problem!       -100
-
-//                for (int k=1;k<histogram_slices-1;k++){
-//                    if (histograms[i][j][k]>2){
-//                        histograms[i][j][k]=-2;
-//                        histograms[i][j][k-1]++;
-//                        histograms[i][j][k+1]++;
-//                    }
-//                }
             }
         }
 
@@ -464,21 +444,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-//        3) Normalize histogram so that all values in each row is equal to one
-        for (int i=0;i<scannedAPs.size();i++){
-            for (int j=0;j<CELLS_NUM;j++){
-                int sum = 0;
-                for (int k=0;k<histogram_slices;k++){
-                    sum += histograms[i][j][k];
-                }
-                for (int k=0;k<histogram_slices;k++){
-                    histograms[i][j][k] = histograms[i][j][k]/sum;
-                }
-            }
-        }
 
 //          4) Iterate through Access points until stop condition is met
-        float max_prior = 0;
+        double max_prior = 0;
         int max_index = 0;
         boolean isConverged = false;
         for(int apIndex=0; apIndex<scannedAPs.size(); apIndex++){
@@ -489,7 +457,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
 //            TODO: Place a second condition
 //            Run the posterior probability calculation
-            posterior_calculation(histograms, scannedRSSs, apIndex);
+            posterior_calculation(norm_dist, scannedRSSs, apIndex);
 
 //             Max of prior
             max_prior = 0;
@@ -507,31 +475,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    private void fitGaussian(float[][][] histograms, float [][][] norm_dist, int ap_num, int histogram_slices){
-        for (int i=0;i<ap_num;i++) {
-            for (int j = 0; j < CELLS_NUM; j++) {
-//                Find mean value
-                int sum = 0;
-                for (int k = 0; k < histogram_slices; k++) {
-                    sum += histograms[i][j][k];
-                }
-                for (int k = 0; k < histogram_slices; k++) {
-                    histograms[i][j][k] = histograms[i][j][k] / sum;
-                }
-            }
-        }
-    }
-
-    private void posterior_calculation(float[][][] histograms, Vector<Integer> scannedRSSs, int i){
+    private void posterior_calculation(double[][][] norm_dist, Vector<Integer> scannedRSSs, int i){
 //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
 //        Max of each row : Currently using max as the mean of the histogram
-        float[] conditionalProbability = new float[CELLS_NUM];
-        int element = -scannedRSSs.get(i)/H;
+        double[] conditionalProbability = new double[CELLS_NUM];
+        int element = scannedRSSs.get(i);
 
         // Find the conditional probability and the normalization factor
         int normalization_factor = 0;
         for(int j = 0; j < CELLS_NUM; j++){
-            conditionalProbability[j] = histograms[i][j][element];
+            double exponent = -0.5 * Math.pow((element - norm_dist[i][j][0]) / norm_dist[i][j][1], 2);
+            double denominator = norm_dist[i][j][1] * Math.sqrt(2 * Math.PI);
+            conditionalProbability[j] = Math.exp(exponent) / denominator;
             normalization_factor += conditionalProbability[j]*prior[j];
         }
         // Find the posterior
