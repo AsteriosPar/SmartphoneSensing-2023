@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView act;
     KNN knn = new KNN();
     private float[] prior = new float[CELLS_NUM];
+    private float[][] posterior = new float[5][CELLS_NUM];
     double[][] jumping = {
             {5.772805407, 1.491408525},
             {15.29048816, 2.304816965},
@@ -459,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         float max_prior = 0;
         int max_index = 0;
         boolean isConverged = false;
+        int serial = 0;
          //  5) Iterate through Access points until stop condition is met
         for(int apIndex=0; apIndex<scannedAPs.size(); apIndex++){
             if ((max_prior > 0.95)) {
@@ -466,23 +468,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 isConverged = true;
                 break;
             }
-//            TODO: Place a second condition
-//            Run the posterior probability calculation
-            posterior_calculation(histograms, scannedRSSs, apIndex);
-
-//             Max of prior
+//          TODO: Place a second condition
+//          Run the posterior probability calculation    
+//          Max of prior
             max_prior = 0;
             max_index = 0;
-            for (int j=0; j<CELLS_NUM; j++) {
-                if (prior[j] > max_prior) {
-                    max_prior = prior[j];
-                    max_index = j;
+
+            if (serial == 0){
+                posterior_calculation_parallel(histograms, scannedRSSs, apIndex,(apIndex%5));
+                if (apIndex%5==0 && apIndex!=0) {
+                    for (int j = 0; j < CELLS_NUM; j++) {
+                        prior[j] = 0;
+                        for (int k = 0; k < 5; k++) {
+                            prior[j] =  posterior[k][j] + prior[j];
+                        }
+                        prior[j] = prior[j]/5;
+                    }
+                    for(int k=0;k<5;k++){
+                        for (int j = 0; j < CELLS_NUM; j++) {
+                            if (posterior[k][j] > max_prior) {
+                                max_prior = posterior[k][j];
+                                max_index = j;
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                posterior_calculation(histograms, scannedRSSs, apIndex);
+                for (int j=0; j<CELLS_NUM; j++) {
+                    if (prior[j] > max_prior) {
+                        max_prior = prior[j];
+                        max_index = j;
+                    }
                 }
             }
         }
         if (!isConverged){
             makeToast("Not converged");
             setBrightBlock(max_index);
+        }
+    }
+
+    private void posterior_calculation_parallel(float[][][] histograms, Vector<Integer> scannedRSSs, int i,int iteration){
+//        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
+//        Max of each row : Currently using max as the mean of the histogram
+        float[] conditionalProbability = new float[CELLS_NUM];
+        int element = -scannedRSSs.get(i)/H;
+
+        // Find the conditional probability and the normalization factor
+        int normalization_factor = 0;
+        for(int j = 0; j < CELLS_NUM; j++){
+            conditionalProbability[j] = histograms[i][j][element];
+            normalization_factor += conditionalProbability[j]*prior[j];
+        }
+        // Find the posterior
+        for (int j = 0; j < CELLS_NUM; j++) {
+            posterior[iteration][j] = conditionalProbability[j]*prior[j]/normalization_factor;
         }
     }
 
