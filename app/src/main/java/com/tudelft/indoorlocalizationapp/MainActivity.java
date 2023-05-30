@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -349,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void makeToast(String message) {
-        Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT);
+        Toast toast = Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG);
         toast.show();
     }
 
@@ -365,6 +366,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void applyBayesian() {
+//        for (int ms=0;ms<35;ms++) {
         int[] measurements_num = new int[CELLS_NUM];
         int total_measurements = 0;
         for (int i = 0; i < CELLS_NUM; i++) {
@@ -374,20 +376,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Vector<String> scannedAPs = new Vector<String>();
         Vector<Integer> scannedRSSs = new Vector<Integer>();
 //        We should renew the prior everytime we press the button
-        Arrays.fill(prior, 1.0f/CELLS_NUM);
+        Arrays.fill(prior, 1.0 / CELLS_NUM);
+
 
 //        1) Gather data
-        if (runLocationPermissionCheck()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                makeToast("Permission for WiFi scan not granted");
-                return;
-            }
-            List<ScanResult> scanResults = wifiManager.getScanResults();
-            for (ScanResult scanResult : scanResults) {
-                scannedAPs.addElement(scanResult.BSSID);
-                scannedRSSs.addElement(scanResult.level);
-            }
+    if (runLocationPermissionCheck()) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            makeToast("Permission for WiFi scan not granted");
+            return;
         }
+        List<ScanResult> scanResults = wifiManager.getScanResults();
+        for (ScanResult scanResult : scanResults) {
+            scannedAPs.addElement(scanResult.BSSID);
+            scannedRSSs.addElement(scanResult.level);
+        }
+    }
+
+
+//            Test
+//            int indexC = 16;
+//            int indexM = ms;
+//            Cursor column = db.getColumnData(indexC, indexM);
+//            Cursor ap_column = db.getColumnData(indexC, 0);
+//            column.moveToFirst();
+//            do {
+//                scannedRSSs.add(column.getInt(0));
+//            } while (column.moveToNext());
+//            ap_column.moveToFirst();
+//            do {
+//                scannedAPs.add(ap_column.getString(0));
+//            } while (ap_column.moveToNext());
+
 
 //        2) Make histogram of the training data (1 table per access point)
 //        NOTE: The k variable indicates the different H slots, not the measurement values
@@ -397,50 +416,51 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //            _______| | | | |_______
 //          0         h h h h        -100
 
-        int histogram_slices = 100 / H;
-        float[][][] histograms = new float[scannedAPs.size()][CELLS_NUM][histogram_slices];
+
         double[][][] norm_dist = new double[scannedAPs.size()][CELLS_NUM][2];
-        float zero = 0;
-        for (float[][] histogram : histograms) {
-            for (float[] floats : histogram) {
-                Arrays.fill(floats, zero);
+        double zero = 0;
+        for (double[][] norm : norm_dist) {
+            for (double[] doubles : norm) {
+                Arrays.fill(doubles, zero);
             }
         }
 
-        for (int i=0;i<scannedAPs.size();i++){
-            for (int j=0;j<CELLS_NUM;j++){
+        for (int i = 0; i < scannedAPs.size(); i++) {
+            for (int j = 0; j < CELLS_NUM; j++) {
 //                Mean of normal distribution
-                int mean = 0;
-                if (db.checkAPExists(scannedAPs.get(i), "C"+(j+1))){
-                    for (int k=0;k<measurements_num[j];k++){
-                        int value = db.getData(scannedAPs.get(i), "C"+(j+1), "M"+(k+1));
+                double sum = 0;
+                int count = 0;
+                if (db.checkAPExists(scannedAPs.get(i), "C" + (j + 1))) {
+                    for (int k = 0; k < measurements_num[j]; k++) {
+                        int value = db.getData(scannedAPs.get(i), "C" + (j + 1), "M" + (k + 1));
 //                        We get '1' in case the value is NULL
 //                        We can never measure a signal with less than -100db but added the check for safety
-                        if (0>value && value>-100) {
-                            int hist_index = -value/H;
-                            histograms[i][j][hist_index]++;
+                        if (0 > value && value > -100) {
 //                            calculate the mean for the normal distribution
-                            mean+=value;
+                            sum += value;
+                            count++;
                         }
                     }
                 }
-                norm_dist[i][j][0] = mean/measurements_num[j];
+                if (count != 0) {
+                    norm_dist[i][j][0] = sum / count;
+                }
             }
         }
 
 //        3) Prepare Gaussian parameters (std_dev)
-        for (int i=0;i<scannedAPs.size();i++){
-            for (int j=0;j<CELLS_NUM;j++){
+        for (int i = 0; i < scannedAPs.size(); i++) {
+            for (int j = 0; j < CELLS_NUM; j++) {
                 double dist = 0;
-                if (db.checkAPExists(scannedAPs.get(i), "C"+(j+1))){
-                    for (int k=0;k<measurements_num[j];k++){
-                        int value = db.getData(scannedAPs.get(i), "C"+(j+1), "M"+(k+1));
-                        if (0>value && value>-100) {
+                if (db.checkAPExists(scannedAPs.get(i), "C" + (j + 1))) {
+                    for (int k = 0; k < measurements_num[j]; k++) {
+                        int value = db.getData(scannedAPs.get(i), "C" + (j + 1), "M" + (k + 1));
+                        if (0 > value && value > -100) {
                             dist += Math.pow((value - norm_dist[i][j][0]), 2.0);
                         }
                     }
                 }
-                norm_dist[i][j][1] = Math.sqrt((dist/measurements_num[j]));
+                norm_dist[i][j][1] = Math.sqrt((dist / measurements_num[j]));
             }
         }
 
@@ -449,9 +469,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         double max_prior = 0;
         int max_index = 0;
         boolean isConverged = false;
-        for(int apIndex=0; apIndex<scannedAPs.size(); apIndex++){
+        for (int apIndex = 0; apIndex < scannedAPs.size(); apIndex++) {
             if ((max_prior > 0.95)) {
-                setBrightBlock(max_index);
+                    setBrightBlock(max_index);
+                    makeToast("Iterations: " + apIndex);
+//                makeToast("Iteration: " + ms + ", C"+(max_index+1));
+
                 isConverged = true;
                 break;
             }
@@ -462,18 +485,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //             Max of prior
             max_prior = 0;
             max_index = 0;
-            for (int j=0; j<CELLS_NUM; j++) {
+            for (int j = 0; j < CELLS_NUM; j++) {
                 if (prior[j] > max_prior) {
                     max_prior = prior[j];
                     max_index = j;
                 }
             }
         }
-        if (!isConverged){
+        if (!isConverged) {
             makeToast("Not converged");
-            setBrightBlock(max_index);
+//            makeToast("Iteration: " + ms + ", C"+(max_index+1));
+                setBrightBlock(max_index);
         }
     }
+//    }
 
     private void posterior_calculation(double[][][] norm_dist, Vector<Integer> scannedRSSs, int i){
 //        3) Find posterior (multiply histogram matrix with priors and divide with normalization factor) -> This should be a vector where the probabilities of all cells should add up to 1
@@ -482,17 +507,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int element = scannedRSSs.get(i);
 
         // Find the conditional probability and the normalization factor
-        int normalization_factor = 0;
+        double normalization_factor = 0;
         for(int j = 0; j < CELLS_NUM; j++){
-            double exponent = -0.5 * Math.pow((element - norm_dist[i][j][0]) / norm_dist[i][j][1], 2);
-            double denominator = norm_dist[i][j][1] * Math.sqrt(2 * Math.PI);
-            conditionalProbability[j] = Math.exp(exponent) / denominator;
-            normalization_factor += conditionalProbability[j]*prior[j];
+            if (norm_dist[i][j][1]!=0 && norm_dist[i][j][0]!=0){
+                double exponent = -0.5 * Math.pow((element - norm_dist[i][j][0]) / norm_dist[i][j][1], 2);
+                double denominator = norm_dist[i][j][1] * Math.sqrt(2 * Math.PI);
+                conditionalProbability[j] = Math.exp(exponent) / denominator;
+                normalization_factor += conditionalProbability[j]*prior[j];
+            }
         }
         // Find the posterior
         for (int j = 0; j < CELLS_NUM; j++) {
             prior[j] = conditionalProbability[j]*prior[j]/normalization_factor;
         }
+    }
+
+
+    private void test(int indexC, int indexM){
+        Cursor column = db.getColumnData(indexC, indexM);
+        Vector<Integer> v = new Vector<Integer>();
+        column.moveToFirst();
+        do {
+            v.add(column.getInt(0));
+        } while (column.moveToNext());
     }
 }
 

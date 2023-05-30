@@ -126,6 +126,17 @@ public class DatabaseClass extends SQLiteOpenHelper {
     }
 
 
-
-
+    public Cursor getColumnData(int column, int measurement) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        if (measurement!=0){
+            String query = "SELECT M" + measurement + " FROM C" + column;
+            Cursor data = db.rawQuery(query, null);
+            return data;
+        }
+        else {
+            String query = "SELECT " + AP + " FROM C" + column;
+            Cursor data = db.rawQuery(query, null);
+            return data;
+        }
+    }
 }
