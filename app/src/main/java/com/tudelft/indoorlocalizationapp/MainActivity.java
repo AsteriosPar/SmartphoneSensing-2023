@@ -521,15 +521,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             prior[j] = conditionalProbability[j]*prior[j]/normalization_factor;
         }
     }
-
-
-    private void test(int indexC, int indexM){
-        Cursor column = db.getColumnData(indexC, indexM);
-        Vector<Integer> v = new Vector<Integer>();
-        column.moveToFirst();
-        do {
-            v.add(column.getInt(0));
-        } while (column.moveToNext());
-    }
 }
 
